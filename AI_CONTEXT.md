@@ -3,7 +3,7 @@
 **🤖 FOR AI ASSISTANTS: Read this FIRST before making any code changes**
 
 **Last Updated:** February 13, 2026  
-**Codebase Status:** Math system complete, basic simulation working, vehicle systems under development
+**Codebase Status:** Restructured to modular architecture, math system complete, placeholder structure for all subsystems
 
 ---
 
@@ -34,14 +34,15 @@ This is a **vehicle dynamics engine** written in **C11** for racing simulation.
 3. **Use math types** - `vde_vec3`, `vde_quat`, `vde_mat3`, `vde_frame`
 4. **Defensive programming** - Always check nulls, validate inputs
 5. **Section headers** - Organize code with `//-------------------------`
-6. **Include math_base.h** - Always include for `vde_real` and constants
+6. **Include core/math/math_base.h** - Always include for `vde_real` and constants
+7. **Use correct include paths** - Math library is in `"core/math/"`, not `"math/"`
 
 ### Quick Style Reference
 
 ```c
 #pragma once
 // Vehicle Dynamics Engine - Module Name
-
+core/
 #include "math/math_base.h"
 
 //-------------------------
@@ -67,17 +68,31 @@ VDE_API int module_update(Module* m, vde_real dt);
 
 ```
 FullCarSim/
-├── include/           # Public headers
-│   ├── math/         # ✅ COMPLETE - Don't modify unless necessary
-│   ├── vehicle/      # 🚧 BASIC - Needs expansion
-│   ├── simulation/   # ✅ SOLID - Core ready
-│   ├── control/      # 📝 Placeholder
-│   ├── sensors/      # 📝 Placeholder
-│   └── track/        # 📝 Placeholder
-├── src/              # Implementations (mirrors include/)
-├── unityInterface/   # Unity/external API
-├── data/             # Config files
-└── build/            # Build outputs
+├── include/                    # Public headers
+│   ├── core/                   # Core engine subsystems
+│   │   ├── math/              # ✅ COMPLETE - 3D math library
+│   │   ├── integrator/        # 📝 Placeholder - Numerical integrators
+│   │   ├── physics/           # 📝 Placeholder - Physics solvers
+│   │   └── utils/             # 📝 Placeholder - Utilities (logger, etc.)
+│   ├── vehicle/               # 🚧 Vehicle components (tire, wheel, suspension, etc.)
+│   ├── tire_models/           # 📝 Placeholder - Tire models
+│   ├── simulation/            # ✅ SOLID - Simulation loop and config
+│   ├── input/                 # 📝 Placeholder - Control inputs
+│   └── track/                 # 📝 Placeholder - Track/environment
+├── src/                       # Implementations (mirrors include/)
+│   ├── core/                  # Core engine implementations
+│   │   ├── math/             # ✅ COMPLETE - Math implementations
+│   │   ├── integrator/       # 📝 Created - Needs implementation
+│   │   ├── physics/          # 📝 Created - Needs implementation
+│   │   └── utils/            # 📝 Created - Needs implementation
+│   ├── vehicle/           core/math/`, `src/corecle implementations
+│   ├── tire_models/          # 📝 Created - Needs implementation
+│   ├── simulation/           # ✅ Basic sim loop working
+│   ├── input/                # 📝 Created - Needs implementation
+│   └── track/                # 📝 Created - Needs implementation
+├── unityInterface/           # Unity/external API
+├── data/                     # Config files
+└── build/                    # Build outputs
 ```
 
 ---
@@ -110,19 +125,7 @@ vde_frame          // {quat q, vec3 p} - rigid body pose
 VDE_PI             // π
 VDE_DEG2RAD        // Degrees to radians
 VDE_RAD2DEG        // Radians to degrees
-VDE_EPS            // 1e-9 - epsilon for comparisons
-VDE_SQRT_EPS       // 1e-6 - sqrt(epsilon)
-```
-
-**Key functions:**
-```c
-vde_abs(), vde_clamp(), vde_isfinite(), vde_approx()
-// + all vec3, mat3, quat, frame operations
-```
-
-### Simulation Core (`include/simulation/`, `src/simulation/`) - ✅ SOLID
-
-**Status:** Core structure ready, uses all math types
+Main header: `simulation_config.h` (defines API)
 
 ```c
 Sim* sim_create(vde_real timestep);
@@ -132,14 +135,65 @@ void sim_set_inputs(Sim* s, vde_real throttle, vde_real brake, vde_real steer);
 void sim_get_state(Sim* s, SimState* out);
 ```
 
+Files:
+- `simulation_config.h` - Main simulation API and types
+- `simulation_loop.h` - Simulation loop structure (placeholder)
+- `telemetry.h` - Telemetry system (placeholder)
+- `sim.c` - Basic simulation implementation
+
 Features:
 - Configurable timestep
 - Telemetry callbacks
 - State export
 - Input validation (clamped to [-1, 1])
 
-### Vehicle (`include/vehicle/, src/vehicle/`) - 🚧 BASIC
+### Vehicle (`include/vehicle/`, `src/vehicle/`) - 🚧 BASIC
 
+**Status:** Simple 2D point-mass model in vehicle.c, component structure defined
+
+Headers created (need implementation):
+- `vehicle.h` - Main vehicle interface (basic 2D implementation exists)
+- `tire.h`, `wheel.h` - Tire and wheel components
+- `suspension.h`, `unsprung_mass.h`, `sprung_mass.h` - Suspension system
+- `brakes.h`, `steering.h`, `driveline.h` - Vehicle subsystems
+- `aerodynamics.h` - Aerodynamic forces
+- `vehicle_parameters.h` - Parameter management
+
+**Next steps:** Expand to full 6DOF rigid body with proper component integration
+
+### Core Subsystems (`include/core/`, `src/core/`) - 📝 STRUCTURE CREATED
+
+#### Math (`core/math/`) - ✅ COMPLETE
+Fully implemented 3D math library
+
+#### Integrators (`core/integrator/`) - 📝 PLACEHOLDER
+- `integratorcore/_base.h/c` - Base integrator interface
+- `semi_implicit_euler.h/c` - Semi-implicit Euler
+- `runge_kutta4.h/c` - RK4 integrator
+
+#### Physics (`core/physics/`) - 📝 PLACEHOLDER
+- `equations_of_motion.h/c` - 6DOF equations
+- `dynamics_solver.h/c` - Dynamics solver
+- `constraints.h/c` - Constraint solver
+
+#### Utils (`core/utils/`) - 📝 PLACEHOLDER
+- `logger.h/c` - Logging system
+
+### Tire Models (`include/tire_models/`, `src/tire_models/`) - 📝 PLACEHOLDER
+
+- `brush_models.h/c` - Brush tire model
+- `magic_formula.h/c` - Pacejka Magic Formula
+- `tire_utilities.h/c` - Tire utilities
+
+### Track System (`include/track/`, `src/track/`) - 📝 PLACEHOLDER
+
+- `track_surface.h/c` - Track surface properties
+- `track_geometry.h/c` - Track geometry
+- `friction_map.h/c` - Friction coefficient map
+
+### Input System (`include/input/`, `src/input/`) - 📝 PLACEHOLDER
+
+- `control.h/c` - Control system (driver inputs)
 **Status:** Simple 2D point-mass model, needs expansion to 6DOF
 
 Current capabilities:
@@ -277,7 +331,7 @@ void update(Module* m) {
 struct MyVector { double x, y, z; };
 
 // Wrong: No input validation
-void set_speed(Vehicle* v, double speed) {
+5. **Math API reference:** Look at `include/core/math/*.h` headers
     v->speed = speed;  // Could be negative or NaN!
 }
 ```
@@ -287,10 +341,15 @@ void set_speed(Vehicle* v, double speed) {
 ```c
 // Correct: Using vde_real
 vde_real position = (vde_real)10.0;
-
-// Correct: pragma once
-#pragma once
-
+core/math/** - Complete, production-ready
+- ✅ **simulation/** - Basic loop working, structure solid
+- 🚧 **vehicle/** - Basic 2D implementation, component structure created
+- 📝 **core/integrator/** - Structure created, needs implementation
+- 📝 **core/physics/** - Structure created, needs implementation
+- 📝 **core/utils/** - Structure created, needs implementation
+- 📝 **tire_models/** - Structure created, needs implementation
+- 📝 **track/** - Structure created, needs implementation
+- 📝 **input/** - Structure created, needs implementation
 // Correct: Null check
 void update(Module* m) {
     if (!m) return;

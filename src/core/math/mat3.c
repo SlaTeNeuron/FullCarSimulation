@@ -1,4 +1,4 @@
-#include "math/mat3.h"
+#include "core/math/mat3.h"
 
 //-------------------------
 // Non-inline Implementations

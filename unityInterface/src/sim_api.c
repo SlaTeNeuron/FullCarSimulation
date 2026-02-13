@@ -1,4 +1,4 @@
-#include "simulation/sim.h"
+#include "simulation/simulation_config.h"
 
 /* 
  * Unity Interface - API Re-export

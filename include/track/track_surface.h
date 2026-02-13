@@ -1,8 +1,8 @@
 #pragma once
 // Vehicle Dynamics Engine - Track/Environment Model
 
-#include "math/math_base.h"
-#include "math/vec3.h"
+#include "core/math/math_base.h"
+#include "core/math/vec3.h"
 
 //-------------------------
 // Types

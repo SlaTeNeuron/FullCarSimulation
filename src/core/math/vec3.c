@@ -1,4 +1,4 @@
-#include "math/vec3.h"
+#include "core/math/vec3.h"
 
 //-------------------------
 // Non-inline Implementations

@@ -2,7 +2,7 @@
 // Vehicle Dynamics Engine - Simulation Core
 
 #include <stdint.h>
-#include "math/math_base.h"
+#include "core/math/math_base.h"
 
 //-------------------------
 // Export / API Configuration

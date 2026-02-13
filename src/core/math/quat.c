@@ -1,4 +1,4 @@
-#include "math/quat.h"
+#include "core/math/quat.h"
 
 //-------------------------
 // Non-inline Implementations

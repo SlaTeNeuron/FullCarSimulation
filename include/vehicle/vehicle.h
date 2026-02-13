@@ -1,10 +1,10 @@
 #pragma once
 // Vehicle Dynamics Engine - Vehicle Model
 
-#include "math/math_base.h"
-#include "math/vec3.h"
-#include "math/quat.h"
-#include "math/frames.h"
+#include "core/math/math_base.h"
+#include "core/math/vec3.h"
+#include "core/math/quat.h"
+#include "core/math/frames.h"
 
 typedef struct Vehicle Vehicle;
 

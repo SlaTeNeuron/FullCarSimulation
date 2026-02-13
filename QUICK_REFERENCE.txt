@@ -14,12 +14,12 @@
 
 🎯 CORE STANDARDS
 --------------------------------------------------------------------------------
-  #pragma once                    - Always use (never #ifndef guards)
-  vde_real                        - For all floating-point (never double/float)
-  vde_vec3, vde_quat, vde_mat3   - Use math library types
-  if (!ptr) return;               - Always check nulls
-  //----------------------        - Use section dividers
-  #include "math/math_base.h"    - Include in all headers
+  #pragma once                         - Always use (never #ifndef guards)
+  vde_real                             - For all floating-point (never double/float)
+  vde_vec3, vde_quat, vde_mat3        - Use math library types
+  if (!ptr) return;                    - Always check nulls
+  //----------------------             - Use section dividers
+  #include "core/math/math_base.h"    - Include in all headers (note: core/math/)
 
 📦 KEY TYPES
 --------------------------------------------------------------------------------
@@ -51,7 +51,7 @@
   #pragma once
   // Vehicle Dynamics Engine - [Module Name]
   
-  #include "math/math_base.h"
+  #include "core/math/math_base.h"
   
   //-------------------------
   // Types
@@ -95,9 +95,15 @@
 
 📊 MODULE STATUS
 --------------------------------------------------------------------------------
-  math/         ✅ COMPLETE      Production-ready 3D math library
-  simulation/   ✅ SOLID         Core structure ready for expansion
-  vehicle/      🚧 BASIC         Simple 2D, upgrading to 6DOF
+  core/math/        ✅ COMPLETE      Production-ready 3D math library
+  simulation/       ✅ SOLID         Core structure ready for expansion
+  vehicle/          🚧 BASIC         Simple 2D, component structure created
+  core/integrator/  📝 PLACEHOLDER   Structure created, needs implementation
+  core/physics/     📝 PLACEHOLDER   Structure created, needs implementation
+  core/utils/       📝 PLACEHOLDER   Structure created, needs implementation
+  tire_models/      📝 PLACEHOLDER   Structure created, needs implementation
+  track/            📝 PLACEHOLDER   Structure created, needs implementation
+  input/            📝 PLACEHOLDER   Structure created, needs implementation
   control/      📝 PLACEHOLDER   Template only, needs implementation
   sensors/      📝 PLACEHOLDER   Template only, needs implementation
   track/        📝 PLACEHOLDER   Template only, needs implementation
@@ -127,6 +133,22 @@
     vde_frame_identity()          Identity transform
     vde_frame_point_body_to_world()   Transform point
     vde_frame_compose(a, b)       Compose transforms
+
+📂 DIRECTORY STRUCTURE
+--------------------------------------------------------------------------------
+  include/
+    core/
+      math/         - Complete 3D math library
+      integrator/   - Numerical integrators (placeholder)
+      physics/      - Physics solvers (placeholder)
+      utils/        - Utilities (placeholder)
+    vehicle/        - Vehicle components
+    tire_models/    - Tire models (placeholder)
+    simulation/     - Simulation loop & config
+    input/          - Control inputs (placeholder)
+    track/          - Track/environment (placeholder)
+  
+  src/              - Mirrors include/ structure with implementations
 
 ⚡ QUICK DIAGNOSTICS
 --------------------------------------------------------------------------------
