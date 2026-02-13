@@ -1,0 +1,182 @@
+================================================================================
+FULLCARSIM - VEHICLE DYNAMICS ENGINE
+Development Plan - Adapted to Current Structure
+Last Updated: February 13, 2026
+================================================================================
+
+CURRENT STRUCTURE (Implemented):
+================================
+
+FullCarSim/
+│
+├── include/                      # Public API headers
+│   ├── math/                     # ✅ COMPLETE - Advanced math system
+│   │   ├── math_base.h          # Core types, constants, precision config
+│   │   ├── vec3.h               # 3D vector operations
+│   │   ├── mat3.h               # 3x3 matrix operations
+│   │   ├── quat.h               # Quaternion operations (SLERP, integration)
+│   │   └── frames.h             # Rigid body transforms
+│   ├── vehicle/                  # 🚧 BASIC - Needs expansion
+│   │   └── vehicle.h            # Basic 2D vehicle model
+│   ├── simulation/               # ✅ SOLID - Core structure ready
+│   │   └── sim.h                # Simulation lifecycle & API
+│   ├── control/                  # 📝 PLACEHOLDER - To be implemented
+│   │   └── control.h            # Control system interface
+│   ├── sensors/                  # 📝 PLACEHOLDER - To be implemented
+│   │   └── sensors.h            # Sensor suite interface
+│   └── track/                    # 📝 PLACEHOLDER - To be implemented
+│       └── track.h              # Track/environment interface
+│
+├── src/                          # Implementation files
+│   ├── math/                     # ✅ COMPLETE
+│   │   ├── math_base.c
+│   │   ├── vec3.c
+│   │   ├── mat3.c
+│   │   ├── quat.c
+│   │   └── frames.c
+│   ├── vehicle/                  # 🚧 BASIC
+│   │   └── vehicle.c
+│   ├── simulation/               # ✅ SOLID
+│   │   └── sim.c
+│   ├── control/                  # 📝 EMPTY
+│   │   └── control.c
+│   ├── sensors/                  # 📝 EMPTY
+│   │   └── sensors.c
+│   ├── track/                    # 📝 EMPTY
+│   │   └── track.c
+│   └── api.c                     # API re-export
+│
+├── unityInterface/               # Unity/External interface
+│   ├── include/
+│   │   └── sim_api.h            # Simplified Unity API
+│   ├── src/
+│   │   ├── sim_api.c            # API implementation
+│   │   └── debug_main.c         # Standalone test executable
+│   └── build/                    # CMake build files
+│
+├── data/                         # Runtime data files
+│   ├── configs/                  # Simulation configurations
+│   ├── tracks/                   # Track definitions
+│   └── vehicles/                 # Vehicle parameter files
+│
+├── build/                        # Build outputs
+│
+├── CODING_STANDARDS.md           # 📄 THIS IS YOUR GUIDE - READ FIRST
+├── AI_CONTEXT.md                 # 📄 FOR AI ASSISTANTS - READ BEFORE CODING
+└── README.md
+
+
+EXPANSION PLAN - PRIORITY ORDER:
+=================================
+
+Phase 1: CORE PHYSICS [HIGH PRIORITY]
+--------------------------------------
+Upgrade vehicle model from 2D point-mass to full 6DOF rigid body dynamics
+
+├── include/physics/              # NEW DIRECTORY
+│   ├── physics_types.h          # RigidBody, Forces, Moments structs
+│   ├── integrator.h             # RK4, Semi-implicit Euler
+│   └── dynamics_solver.h        # 6DOF equations of motion
+│
+├── src/physics/                  # NEW DIRECTORY
+│   ├── integrator.c
+│   └── dynamics_solver.c
+│
+└── Upgrade: vehicle/vehicle.h    # Extend to use physics system
+    - Add 6DOF state (position, orientation, linear/angular velocity)
+    - Use vde_frame for pose representation
+    - Integrate with dynamics solver
+
+
+Phase 2: TIRE & SUSPENSION [HIGH PRIORITY]
+-------------------------------------------
+Foundation for realistic vehicle dynamics
+
+├── include/vehicle/              # EXPAND EXISTING
+│   ├── tire.h                   # Tire state & interface
+│   ├── suspension.h             # Suspension kinematics & forces
+│   └── wheel.h                  # Wheel/tire assembly
+│
+├── include/tire_models/          # NEW DIRECTORY
+│   ├── tire_model_base.h        # Abstract tire model interface
+│   ├── brush_model.h            # Brush tire model
+│   └── pacejka_model.h          # Magic Formula (MF6.1/6.2)
+│
+└── src/...                       # Corresponding implementations
+
+
+Phase 3: TRACK & ENVIRONMENT [MEDIUM PRIORITY]
+-----------------------------------------------
+Ground contact and track representation
+
+├── include/track/                # EXPAND EXISTING
+│   ├── track.h                  # Main track interface (already exists)
+│   ├── surface.h                # Surface properties (friction, grip)
+│   └── geometry.h               # Track geometry & elevation
+│
+└── src/track/                    # Corresponding implementations
+    ├── track.c
+    ├── surface.c
+    └── geometry.c
+
+
+Phase 4: VEHICLE SYSTEMS [MEDIUM PRIORITY]
+-------------------------------------------
+Complete vehicle subsystems
+
+├── include/vehicle/              # EXPAND EXISTING
+│   ├── aerodynamics.h           # Drag, downforce, side forces
+│   ├── driveline.h              # Engine, transmission, differentials
+│   ├── brakes.h                 # Brake system & ABS
+│   └── steering.h               # Steering kinematics
+│
+└── src/vehicle/                  # Corresponding implementations
+
+
+Phase 5: CONTROL SYSTEMS [MEDIUM PRIORITY]
+-------------------------------------------
+Driver models and vehicle controllers
+
+├── include/control/              # EXPAND EXISTING
+│   ├── control.h                # Main interface (already exists)
+│   ├── driver_model.h           # AI driver
+│   ├── throttle_controller.h   # Throttle control strategies
+│   ├── brake_controller.h      # Brake control & ABS
+│   └── steering_controller.h   # Steering control
+│
+└── src/control/                  # Corresponding implementations
+
+
+Phase 6: SENSORS & TELEMETRY [LOW PRIORITY]
+--------------------------------------------
+Data acquisition and monitoring
+
+├── include/sensors/              # EXPAND EXISTING
+│   ├── sensors.h                # Main interface (already exists)
+│   ├── imu.h                    # Inertial measurement unit
+│   ├── wheel_sensors.h          # Wheel speed, slip
+│   └── telemetry.h              # Enhanced telemetry system
+│
+└── src/sensors/                  # Corresponding implementations
+
+
+IMPLEMENTATION NOTES:
+=====================
+
+1. ALL new code MUST follow standards in CODING_STANDARDS.md
+2. Use vde_real for all floating-point math
+3. Use math/ types (vde_vec3, vde_quat, vde_frame) for spatial math
+4. Add defensive programming (null checks, validation)
+5. Section code with //------------------------- headers
+6. Use #pragma once for all headers
+7. Document as you go
+
+BEFORE ADDING NEW MODULES:
+- Read CODING_STANDARDS.md
+- Read AI_CONTEXT.md
+- Check existing module structure for patterns
+- Maintain consistency with math/ implementation quality
+
+================================================================================
+⚠️  IMPORTANT: Keep this file updated as structure evolves
+================================================================================
