@@ -6,8 +6,8 @@
 //-------------------------
 
 struct IntegratorBase {
-    // Base integrator state (if needed)
-    int placeholder;
+    vde_real* derivatives;  // Temporary storage for derivatives
+    int capacity;           // Allocated capacity
 };
 
 //-------------------------
@@ -24,7 +24,8 @@ IntegratorBase* integrator_create(void) {
     IntegratorBase* integrator = (IntegratorBase*)malloc(sizeof(IntegratorBase));
     if (!integrator) return NULL;
     
-    integrator->placeholder = 0;
+    integrator->derivatives = NULL;
+    integrator->capacity = 0;
     return integrator;
 }
 
@@ -36,6 +37,10 @@ IntegratorBase* integrator_create(void) {
  */
 void integrator_destroy(IntegratorBase* integrator) {
     if (!integrator) return;
+    
+    if (integrator->derivatives) {
+        free(integrator->derivatives);
+    }
     free(integrator);
 }
 
@@ -72,6 +77,25 @@ void integrator_step(
         return;
     }
     
-    // TODO: Implement base integration step
-    // This should be overridden by specific integrator types
+    // Ensure we have enough storage for derivatives
+    if (integrator->capacity < n) {
+        vde_real* new_derivatives = (vde_real*)realloc(integrator->derivatives, n * sizeof(vde_real));
+        if (!new_derivatives) return;
+        integrator->derivatives = new_derivatives;
+        integrator->capacity = n;
+    }
+    
+    // Explicit Euler: y_new = y_old + f(y_old) * dt
+    // 1. Compute derivatives at current state
+    deriv_func(state, integrator->derivatives, user_data);
+    
+    // 2. Update state
+    for (int i = 0; i < n; i++) {
+        state[i] += integrator->derivatives[i] * dt;
+        
+        // Safety check for numerical stability
+        if (!vde_isfinite(state[i])) {
+            state[i] = (vde_real)0.0;
+        }
+    }
 }

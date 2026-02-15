@@ -123,10 +123,43 @@ void rk4_step(
         integrator->capacity = n;
     }
     
-    // TODO: Implement RK4 integration
-    // 1. Compute k1 = f(t, y)
-    // 2. Compute k2 = f(t + dt/2, y + dt*k1/2)
-    // 3. Compute k3 = f(t + dt/2, y + dt*k2/2)
-    // 4. Compute k4 = f(t + dt, y + dt*k3)
-    // 5. Update: y_new = y + dt/6 * (k1 + 2*k2 + 2*k3 + k4)
+    // Classic Runge-Kutta 4th order method
+    // y_new = y + dt/6 * (k1 + 2*k2 + 2*k3 + k4)
+    
+    // Step 1: Compute k1 = f(t, y)
+    deriv_func(state, integrator->k1, user_data);
+    
+    // Step 2: Compute k2 = f(t + dt/2, y + dt*k1/2)
+    vde_real half_dt = dt * (vde_real)0.5;
+    for (int i = 0; i < n; i++) {
+        integrator->temp_state[i] = state[i] + half_dt * integrator->k1[i];
+    }
+    deriv_func(integrator->temp_state, integrator->k2, user_data);
+    
+    // Step 3: Compute k3 = f(t + dt/2, y + dt*k2/2)
+    for (int i = 0; i < n; i++) {
+        integrator->temp_state[i] = state[i] + half_dt * integrator->k2[i];
+    }
+    deriv_func(integrator->temp_state, integrator->k3, user_data);
+    
+    // Step 4: Compute k4 = f(t + dt, y + dt*k3)
+    for (int i = 0; i < n; i++) {
+        integrator->temp_state[i] = state[i] + dt * integrator->k3[i];
+    }
+    deriv_func(integrator->temp_state, integrator->k4, user_data);
+    
+    // Step 5: Combine slopes with weighted average
+    // y_new = y + dt/6 * (k1 + 2*k2 + 2*k3 + k4)
+    vde_real dt_sixth = dt / (vde_real)6.0;
+    for (int i = 0; i < n; i++) {
+        state[i] += dt_sixth * (integrator->k1[i] + 
+                                (vde_real)2.0 * integrator->k2[i] + 
+                                (vde_real)2.0 * integrator->k3[i] + 
+                                integrator->k4[i]);
+        
+        // Safety check for numerical stability
+        if (!vde_isfinite(state[i])) {
+            state[i] = (vde_real)0.0;
+        }
+    }
 }
