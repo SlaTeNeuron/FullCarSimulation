@@ -2,46 +2,42 @@
 
 A high-fidelity vehicle dynamics simulation engine written in modern C11, designed for racing applications with GPU compatibility in mind.
 
-**Status:** 🚧 In Active Development  
-**Current Version:** 0.2.0 (Math system complete, basic simulation working)  
-**Last Updated:** February 13, 2026
+**Status:** 🎯 ALPHA - DLL Fully Working, Ready for Unity Integration Testing  
+**Current Version:** 0.4.0-alpha (Unity API fully implemented, simulation running end-to-end)  
+**Last Updated:** February 18, 2026
 
 ---
 
 ## 🚀 Quick Start
 
-### For Developers
+**First time here?** Read **[AI_CONTEXT.md](AI_CONTEXT.md)** for architecture and coding standards.
 
-**First time here?** Read these in order:
+### Building for Alpha
 
-1. **[AI_CONTEXT.md](AI_CONTEXT.md)** - 2-minute overview (essential for AI assistants)
-2. **[CODING_STANDARDS.md](CODING_STANDARDS.md)** - Complete style guide
-3. **[copilotPlan.txt](copilotPlan.txt)** - Project structure & roadmap
+**Prerequisites:**
+- Windows 10/11
+- Visual Studio 2019 or later (with C++ tools)
+- CMake 3.15+
 
-### Building
-
-```bash
+**Build Instructions:**
+```powershell
+# Navigate to Unity interface directory
 cd unityInterface
-build_debug.bat      # Windows
-```
 
-### Running Tests
+# Configure and build (generates DLL + debug executable)
+.\build_debug.bat
 
-```bash
-cd unityInterface
-run_debug.bat        # Run automated test suite
+# Run debug test executable
+.\run_debug.bat
 ```
 
 ---
 
-## 📚 Documentation Index
+## 📚 Documentation
 
-| Document | Purpose | Audience |
-|----------|---------|----------|
-| [AI_CONTEXT.md](AI_CONTEXT.md) | Quick reference, common tasks | AI assistants, new developers |
-| [CODING_STANDARDS.md](CODING_STANDARDS.md) | Complete style guide & principles | All developers |
-| [copilotPlan.txt](copilotPlan.txt) | Architecture & expansion plan | Architects, project leads |
-| [README.md](README.md) | This file - project overview | Everyone |
+- **[README.md](README.md)** - This file - project overview and build guide
+- **[AI_CONTEXT.md](AI_CONTEXT.md)** - For AI assistants - architecture, implementation status, coding standards
+- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Quick lookup for common tasks and Guiggiani references
 
 ---
 
@@ -50,29 +46,143 @@ run_debug.bat        # Run automated test suite
 ### Core Principles
 
 - **Language:** C11 (modern C, not C++)
+- **Methodology:** Guiggiani's "The Science of Vehicle Dynamics" - three-equation structure
 - **Precision:** Configurable via `vde_real` (defaults to double)
 - **Platform:** Cross-platform (Windows/Linux/macOS)
-- **Future-proof:** Prepared for GPU deployment (CUDA/OpenCL)
+- **Target:** DLL for Unity integration
+
+### Guiggiani's Three-Equation Structure
+
+The core simulation follows Section 3.12 of Guiggiani:
+
+1. **CONGRUENCE** (Kinematic) - How vehicle parts move
+   - Wheel velocities, tire slips (σ, α), suspension rates
+   
+2. **CONSTITUTIVE** (Component Behavior) - Forces from states
+   - Tire forces, spring forces, damper forces, aero forces
+   
+3. **EQUILIBRIUM** (Force Balance) - Newton's laws
+   - F = m·a, M = I·α, load transfers
 
 ### Module Status
 
 | Module | Status | Description |
 |--------|--------|-------------|
-| **math/** | ✅ Complete | 3D math library (vec3, quat, mat3, frames) |
-| **simulation/** | ✅ Solid | Core simulation loop & API |
-| **vehicle/** | 🚧 Basic | Simple 2D model (expanding to 6DOF) |
-| **control/** | 📝 Placeholder | Control systems (planned) |
-| **sensors/** | 📝 Placeholder | Sensor suite (planned) |
-| **track/** | 📝 Placeholder | Track/environment (planned) |
+| **unity_api.c** | ✅ Complete | Full DLL implementation, all functions working |
+| **core/math/** | ✅ Complete | 3D vectors, quaternions, matrices, frames |
+| **core/integrator/** | ✅ Complete | Euler, RK4, Semi-implicit Euler |
+| **tire_models/** | ✅ Complete | Magic Formula + Brush tire models |
+| **vehicle/** | 👍 Working | Simple 2D dynamics, needs 3D expansion |
+| **track/** | 📝 Stub | Track geometry and surface |
+| **simulation/** | ✅ Complete | Full integration with Unity API |
 
 ---
 
-## 🔧 Key Technologies
+## 🎮 Unity Integration
+
+### Two-Layer API Architecture
+
+**Layer 1: Internal C API** (`simulation/sim.c` + `simulation/simulation_config.h`)
+- Used by: Standalone debug executable (`sim_debug.exe`)
+- Functions: `sim_create()`, `sim_step()`, `sim_set_inputs()`, etc.
+- Purpose: Simple C interface for internal testing
+
+**Layer 2: Unity DLL API** (`src/unity_api.c` + `include/unity_api.h`)
+- Used by: Unity C# through P/Invoke
+- Status: ✅ FULLY IMPLEMENTED - All functions working, simulation runs end-to-end
+- Functions: `VehicleSim_Create()`, `VehicleSim_Step()`, `VehicleSim_GetRenderData()`, etc.
+- Purpose: Complete DLL boundary for Unity with comprehensive telemetry
+
+**Key API Change:** `VehicleSim_Step()` now takes `DriverInputs` as a parameter for better efficiency:
+```c
+void VehicleSim_Step(VehicleSimulation* sim, const DriverInputs* inputs)
+```
+This eliminates the need for separate `SetInputs()` calls.
+
+### Unity DLL Functions
+
+```c
+// Lifecycle
+VehicleSimulation* VehicleSim_Create(double timestep)
+void VehicleSim_Destroy(VehicleSimulation* sim)
+int VehicleSim_Initialize(VehicleSimulation* sim)
+void VehicleSim_Reset(VehicleSimulation* sim)
+
+// Simulation Control - NEW: Step takes inputs directly
+void VehicleSim_Step(VehicleSimulation* sim, const DriverInputs* inputs)
+void VehicleSim_StepMultiple(VehicleSimulation* sim, const DriverInputs* inputs, int num_steps)
+
+// Output - All fully implemented
+void VehicleSim_GetRenderData(const VehicleSimulation* sim, VehicleRenderData* out)
+void VehicleSim_GetTelemetry(const VehicleSimulation* sim, TelemetryFrame* out)
+void VehicleSim_RegisterTelemetryCallback(VehicleSimulation* sim, TelemetryCallback cb, void* data)
+
+// Asset Management
+int VehicleSim_LoadVehicle(VehicleSimulation* sim, const char* config_path)
+void VehicleSim_GetVehicleParameters(const VehicleSimulation* sim, VehicleParameters* out)
+void VehicleSim_GetTrackInfo(const VehicleSimulation* sim, TrackInfo* out)
+
+// Validation & Stats
+void VehicleSim_Validate(const VehicleSimulation* sim, ValidationResult* out)
+void VehicleSim_GetStats(const VehicleSimulation* sim, SimulationStats* out)
+```
+
+### C# Interop Example
+
+```csharp
+[StructLayout(LayoutKind.Sequential)]
+public struct DriverInputs {
+    public double throttle;
+    public double brake;
+    public double steering;
+    public double clutch;
+    public int gear;
+}
+
+[DllImport("racing_sim")]
+private static extern IntPtr VehicleSim_Create(double timestep);
+
+[DllImport("racing_sim")]
+private static extern void VehicleSim_Step(IntPtr sim, ref DriverInputs inputs);
+
+[DllImport("racing_sim")]
+private static extern void VehicleSim_GetRenderData(IntPtr sim, out VehicleRenderData data);
+
+// Usage in Unity
+void FixedUpdate() {
+    DriverInputs inputs = new DriverInputs {
+        throttle = Input.GetAxis("Throttle"),
+        brake = Input.GetAxis("Brake"),
+        steering = Input.GetAxis("Steering"),
+        clutch = 0.0,
+        gear = 1
+    };
+    VehicleSim_Step(simHandle, ref inputs);
+}
+```
+
+See `include/unity_api.h` for complete API reference with 400+ lines of documentation.
+
+---
+
+## 🔧 Technologies
 
 ### Math Library
 
-Complete 3D mathematics with:
-- Vectors (`vde_vec3`) - add, subtract, dot, cross, normalize
+Complete 3D mathematics with type-safe wrappers for all operations:
+
+**Scalar Operations** (`math_base.h`):
+- Core: `vde_abs()`, `vde_clamp()`, `vde_min()`, `vde_max()`, `vde_sign()`
+- Interpolation: `vde_lerp()`, `vde_square()`
+- Trigonometry: `vde_sin()`, `vde_cos()`, `vde_tan()`, `vde_atan2()`
+- Math functions: `vde_sqrt()`, `vde_pow()`, `vde_exp()`, `vde_log()`
+- Validation: `vde_isfinite()`, `vde_approx()`
+
+**Vector Types** (`vec3.h`):
+- Vectors (`vde_vec3`) - add, subtract, dot, cross, normalize, scale
+- Operations: `vde_vec3_norm()`, `vde_vec3_norm2()`, `vde_vec3_madd()`
+
+**Rotation Types**:
 - Matrices (`vde_mat3`) - multiply, inverse, transpose, transforms
 - Quaternions (`vde_quat`) - rotation, SLERP, integration
 - Frames (`vde_frame`) - rigid body transforms
@@ -82,17 +192,35 @@ Complete 3D mathematics with:
 vde_vec3 position = vde_vec3_make(1.0, 2.0, 3.0);
 vde_quat rotation = vde_quat_from_axis_angle(&axis, angle);
 vde_vec3 rotated = vde_quat_rotate(&rotation, &position);
+
+// Use type-safe math wrappers
+vde_real speed = vde_sqrt(vde_square(vx) + vde_square(vy));
+vde_real angle = vde_atan2(vy, vx);
+vde_real value = vde_clamp(input, 0.0, 1.0);
 ```
 
-### Simulation Core
+### Internal C API (Debug/Testing)
 
-Flexible, high-performance simulation engine:
 ```c
+// Used by standalone test executable
 Sim* sim = sim_create(0.02);  // 50 Hz
+sim_start(sim);
 sim_set_inputs(sim, throttle, brake, steer);
-sim_step(sim);  // Advance one timestep
-sim_get_state(sim, &state);  // Extract telemetry
+sim_step(sim);
+sim_get_state(sim, &state);
+sim_destroy(sim);
 ```
+
+### Tire Models
+
+- **Magic Formula** (Pacejka) - Empirical, industry standard
+- **Brush Model** - Physical with transient effects
+
+### Numerical Integration
+
+- **Explicit Euler** - Fast, 1st order
+- **Runge-Kutta 4** - Accurate, 4th order
+- **Semi-implicit Euler** - Stable for stiff systems
 
 ---
 
@@ -122,26 +250,20 @@ FullCarSim/
 │
 ├── build/                # Build output directory
 │
-├── AI_CONTEXT.md         # 🤖 Quick reference for AI/developers
-├── CODING_STANDARDS.md   # 📖 Complete coding standards
-├── copilotPlan.txt       # 🗺️ Project roadmap
+├── AI_CONTEXT.md         # 🤖 Architecture, standards, and implementation status
 └── README.md             # 📄 This file
 ```
 
 ---
 
-## 🎯 Development Roadmap
+## 🎯 Post-Alpha Roadmap
 
-See [copilotPlan.txt](copilotPlan.txt) for detailed expansion plan.
-
-**Immediate priorities:**
-
-1. **Phase 1:** Upgrade to 6DOF rigid body dynamics
-2. **Phase 2:** Implement tire & suspension models
-3. **Phase 3:** Add track geometry & surface properties
-4. **Phase 4:** Complete vehicle subsystems (aero, driveline, brakes)
-5. **Phase 5:** Control systems & driver models
-6. **Phase 6:** Sensor suite & enhanced telemetry
+1. **Expand Vehicle to full 3D** - Position, orientation, 6DOF velocities (Priority 1)
+2. **Transient brush model** - Bristle dynamics (Guiggiani Ch. 10)
+3. **Full load transfers** - Sprung/unsprung masses (Section 3.10)
+4. **Inerter suspension** - Advanced damping (Section 8.2.1)
+5. **Caching optimization** - Dirty flags for constitutive queries
+6. **CFD aerodynamics** - Lookup tables for ground effect
 
 ---
 
@@ -174,65 +296,19 @@ Racing simulations must be robust:
 
 ## 🤝 Contributing
 
-### Before Writing Code
-
-1. Read [AI_CONTEXT.md](AI_CONTEXT.md) (2-minute crash course)
-2. Review [CODING_STANDARDS.md](CODING_STANDARDS.md) Quick Reference
-3. Check [copilotPlan.txt](copilotPlan.txt) for planned work
-4. Follow existing patterns in the codebase
-
-### Code Requirements
-
-All code must:
-- Use `vde_real` (never bare `double`/`float`)
-- Use math library types (`vde_vec3`, `vde_quat`, etc.)
-- Include defensive null/validation checks
-- Follow section organization (`//-------------------------`)
-- Use `#pragma once` (never `#ifndef` guards)
-- Update documentation if adding new patterns
-
-### Pull Request Checklist
-
-- [ ] Code follows CODING_STANDARDS.md
-- [ ] All defensive checks included
-- [ ] Uses `vde_real` consistently
-- [ ] Section headers added
-- [ ] Builds without errors
-- [ ] Updated relevant documentation
-- [ ] Added to copilotPlan.txt if new module
+**Before coding:**
+1. Read [AI_CONTEXT.md](AI_CONTEXT.md) for architecture and standards
+2. Use `vde_real` for all floating-point
+3. Use math library types (`vde_vec3`, `vde_quat`, `vde_mat3`)
+4. Add defensive null checks
+5. Follow section organization with `//-------------------------`
 
 ---
 
-## 🐛 Known Issues
-
-- Vehicle model is simplified 2D (6DOF upgrade in progress)
-- No tire model yet (using basic force model)
-- Track is flat (geometry system planned)
-
-See [copilotPlan.txt](copilotPlan.txt) for complete feature status.
-
----
-
-## 📝 License
-
-*[Add license information here]*
-
----
-
-## 📞 Contact
-
-*[Add contact information here]*
-
----
-
-## 🔄 Maintenance Notes
-
-**⚠️ Keep documentation synchronized!**
-
-When you change:
-- Architecture → Update copilotPlan.txt
-- Standards → Update CODING_STANDARDS.md
-- Key patterns → Update AI_CONTEXT.md
+## 🔄 Changelog
+- Architecture → Update `AI_CONTEXT.md`
+- Standards → Update `AI_CONTEXT.md` > Standards Summary
+- Key patterns → Update `AI_CONTEXT.md`
 - Build process → Update this README
 
 **Always update the "Last Updated" date at the top of modified docs.**

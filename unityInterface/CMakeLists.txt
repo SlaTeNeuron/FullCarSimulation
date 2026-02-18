@@ -15,18 +15,70 @@ include_directories(
 
 # Core simulation source files (shared by both DLL and debug executable)
 set(CORE_SRC
-    ${SIM_ROOT}/src/math/vec3.c
-    ${SIM_ROOT}/src/math/mat3.c
-    ${SIM_ROOT}/src/math/quat.c
-    ${SIM_ROOT}/src/math/frames.c
+    # Core math library
+    ${SIM_ROOT}/src/core/math/vec3.c
+    ${SIM_ROOT}/src/core/math/mat3.c
+    ${SIM_ROOT}/src/core/math/quat.c
+    ${SIM_ROOT}/src/core/math/frames.c
+    ${SIM_ROOT}/src/core/math/math_base.c
+    
+    # Core integrators (Euler, RK4, Semi-implicit)
+    ${SIM_ROOT}/src/core/integrator/integrator_base.c
+    ${SIM_ROOT}/src/core/integrator/runge_kutta4.c
+    ${SIM_ROOT}/src/core/integrator/semi_implicit_euler.c
+    
+    # Core physics
+    ${SIM_ROOT}/src/core/physics/equations_of_motion.c
+    ${SIM_ROOT}/src/core/physics/dynamics_solver.c
+    ${SIM_ROOT}/src/core/physics/constraints.c
+    
+    # Core utilities
+    ${SIM_ROOT}/src/core/utils/logger.c
+    
+    # Tire models (Magic Formula, Brush)
+    ${SIM_ROOT}/src/tire_models/tire_utilities.c
+    ${SIM_ROOT}/src/tire_models/magic_formula.c
+    ${SIM_ROOT}/src/tire_models/brush_models.c
+    
+    # Vehicle components
+    ${SIM_ROOT}/src/vehicle/tire.c
+    ${SIM_ROOT}/src/vehicle/wheel.c
+    ${SIM_ROOT}/src/vehicle/suspension.c
+    ${SIM_ROOT}/src/vehicle/brakes.c
+    ${SIM_ROOT}/src/vehicle/aerodynamics.c
+    ${SIM_ROOT}/src/vehicle/steering.c
+    ${SIM_ROOT}/src/vehicle/driveline.c
+    ${SIM_ROOT}/src/vehicle/sprung_mass.c
+    ${SIM_ROOT}/src/vehicle/unsprung_mass.c
+    ${SIM_ROOT}/src/vehicle/vehicle_parameters.c
+    
+    # Three-equation structure (Guiggiani methodology)
+    ${SIM_ROOT}/src/vehicle/vehicle_congruence.c
+    ${SIM_ROOT}/src/vehicle/vehicle_constitutive.c
+    ${SIM_ROOT}/src/vehicle/vehicle_equilibrium.c
+    ${SIM_ROOT}/src/vehicle/vehicle_model.c
+    
+    # Vehicle integration
     ${SIM_ROOT}/src/vehicle/vehicle.c
+    
+    # Track model
+    ${SIM_ROOT}/src/track/track_geometry.c
+    ${SIM_ROOT}/src/track/track_surface.c
+    ${SIM_ROOT}/src/track/friction_map.c
+    ${SIM_ROOT}/src/track/track.c
+    
+    # Input handling
+    ${SIM_ROOT}/src/input/control.c
+    
+    # Simulation loop and telemetry
+    ${SIM_ROOT}/src/simulation/simulation_loop.c
+    ${SIM_ROOT}/src/simulation/telemetry.c
     ${SIM_ROOT}/src/simulation/sim.c
-    ${SIM_ROOT}/src/api.c
 )
 
-# Unity DLL wrapper source
+# Unity DLL-specific source (API layer)
 set(DLL_SRC
-    ${CMAKE_SOURCE_DIR}/src/sim_api.c
+    ${SIM_ROOT}/src/unity_api.c
 )
 
 # Debug executable source
@@ -40,7 +92,7 @@ set(DEBUG_SRC
 add_library(racing_sim SHARED ${CORE_SRC} ${DLL_SRC})
 
 # Define BUILDING_DLL when compiling the library
-target_compile_definitions(racing_sim PRIVATE BUILDING_DLL)
+target_compile_definitions(racing_sim PRIVATE BUILDING_DLL _CRT_SECURE_NO_WARNINGS)
 
 # Optional: define platform exports
 if (WIN32)
