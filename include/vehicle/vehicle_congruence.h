@@ -9,7 +9,7 @@
 //   1. CONGRUENCE → 2. CONSTITUTIVE → 3. EQUILIBRIUM
 //
 // Key Sections:
-//   - 3.2.1: Vehicle velocities (u, v, r)
+//   - 3.2.1: Vehicle velocities (u, v, w, p, q, r) - full 6DOF body-frame rates
 //   - 3.2.2: Velocities at wheel contact points
 //   - 3.2.7: Tire kinematics (computing tire slips from motion)
 //   - Chapter 5: Detailed kinematics of cornering

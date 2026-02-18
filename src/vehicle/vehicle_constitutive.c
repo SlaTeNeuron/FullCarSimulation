@@ -4,7 +4,7 @@
 #include "vehicle/suspension.h"
 #include "vehicle/aerodynamics.h"
 #include "vehicle/brakes.h"
-#include <math.h>
+#include "core/math/math_base.h"
 
 //-------------------------
 // Complete Constitutive Evaluation
@@ -31,10 +31,10 @@
  *   4. Evaluate brake torques
  *   5. Store results in vehicle state for equilibrium equations
  */
-void vehicle_constitutive_evaluate_all(Vehicle* vehicle) {
+VDE_API void vehicle_constitutive_evaluate_all(Vehicle* vehicle) {
     if (!vehicle) return;
     
-    /* ALPHA STATUS: Using simple evaluate-all approach (Option A).
+    /* ALPHA STATUS: Using simple evaluate-all approach.
      * Works correctly but may evaluate unnecessarily.
      * 
      * POST-ALPHA OPTIMIZATION TODO:
@@ -87,7 +87,7 @@ void vehicle_constitutive_evaluate_all(Vehicle* vehicle) {
  * Output:
  *   - out_forces: Tire forces and moments
  */
-void vehicle_constitutive_evaluate_tire(
+VDE_API void vehicle_constitutive_evaluate_tire(
     const Vehicle* vehicle,
     int corner_index,
     const TireSlips* slips,
@@ -130,7 +130,7 @@ void vehicle_constitutive_evaluate_tire(
  * Output:
  *   - out_forces: Spring and damper forces
  */
-void vehicle_constitutive_evaluate_suspension(
+VDE_API void vehicle_constitutive_evaluate_suspension(
     const Vehicle* vehicle,
     int corner_index,
     vde_real deflection,
@@ -187,7 +187,7 @@ void vehicle_constitutive_evaluate_suspension(
  * Output:
  *   - out_forces: Aerodynamic forces and moments
  */
-void vehicle_constitutive_evaluate_aero(
+VDE_API void vehicle_constitutive_evaluate_aero(
     const Vehicle* vehicle,
     const vde_vec3* velocity,
     AeroConstitutiveForces* out_forces
@@ -252,7 +252,7 @@ void vehicle_constitutive_evaluate_aero(
  * Output:
  *   - out_torques: Brake torques at each wheel
  */
-void vehicle_constitutive_evaluate_brakes(
+VDE_API void vehicle_constitutive_evaluate_brakes(
     const Vehicle* vehicle,
     vde_real brake_input,
     BrakeConstitutiveTorques* out_torques
@@ -292,7 +292,7 @@ void vehicle_constitutive_evaluate_brakes(
 /**
  * Set tire model type
  */
-void vehicle_constitutive_set_tire_model(
+VDE_API void vehicle_constitutive_set_tire_model(
     Vehicle* vehicle,
     TireModelType model_type
 ) {
@@ -317,7 +317,7 @@ TireModelType vehicle_constitutive_get_tire_model(
 /**
  * Set suspension model type
  */
-void vehicle_constitutive_set_suspension_model(
+VDE_API void vehicle_constitutive_set_suspension_model(
     Vehicle* vehicle,
     SuspensionModelType model_type
 ) {

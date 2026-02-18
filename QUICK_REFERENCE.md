@@ -29,7 +29,7 @@
 │            TelemetryFrame (73+ channels)           │
 │                                                     │
 │  Functions: VehicleSim_Create, _Step,              │
-│             _GetRenderData, _SetInputs, etc.       │
+│             _GetRenderData, _GetTelemetry, etc.    │
 └─────────────────────────────────────────────────────┘
                         ↕
 ┌─────────────────────────────────────────────────────┐
@@ -62,14 +62,15 @@
    ↓
 2. Get player input (steering wheel, pedals)
    ↓
-3. VehicleSim_SetInputs(throttle, brake, steering)
+3. Prepare DriverInputs structure with throttle, brake, steering
    ↓ [DLL Boundary]
    ↓
-4. VehicleSim_Step() executes:
-   a. Congruence: Compute tire slips
-   b. Constitutive: Evaluate tire forces
-   c. Equilibrium: Solve F=ma
-   d. Integrate: Update state
+4. VehicleSim_Step(sim, &inputs) executes:
+   a. Apply inputs to vehicle
+   b. Congruence: Compute tire slips
+   c. Constitutive: Evaluate tire forces
+   d. Equilibrium: Solve F=ma
+   e. Integrate: Update state
    ↓
 5. VehicleSim_GetRenderData(out renderData)
    ↓ [DLL Boundary]
@@ -90,7 +91,6 @@
 | File | Purpose |
 |------|---------|
 | `unity_api.h` | ⭐ THE DLL interface - start here |
-| `UNITY_INTEGRATION.md` | Complete Unity integration guide |
 | `data/vehicles/*.txt` | Vehicle configuration files |
 | `data/tracks/*.txt` | Track/map definition files |
 
@@ -106,12 +106,11 @@
 ### Documentation
 | File | Purpose |
 |------|---------|
-| `AI_CONTEXT.md` | Quick reference for AI assistants |
-| `UNITY_INTEGRATION.md` | Unity DLL integration guide |
+| `AI_CONTEXT.md` | Architecture, standards, and implementation status |
 | `include/README.md` | Header organization |
 | `include/vehicle/README.md` | Vehicle components |
 | `include/tire_models/README.md` | Tire models (detailed) |
-| `copilotPlan.md` | Implementation roadmap |
+| `include/core/physics/README.md` | Physics solvers |
 
 ---
 
@@ -123,7 +122,7 @@ VehicleSim_Create(timestep)              // Create sim instance
 VehicleSim_LoadVehicle("path/car.txt")   // Load vehicle config
 VehicleSim_LoadTrack("path/track.txt")   // Load track
 VehicleSim_Initialize()                  // Init after loading
-VehicleSim_Step()                        // Advance physics
+VehicleSim_Step(sim, &inputs)            // Advance physics with inputs
 VehicleSim_Destroy()                     // Cleanup
 ```
 
@@ -200,13 +199,22 @@ TelemetryFrame {
 ```csharp
 using System.Runtime.InteropServices;
 
-[DllImport("racing_sim_plugin")]
+[StructLayout(LayoutKind.Sequential)]
+public struct DriverInputs {
+    public double throttle;
+    public double brake;
+    public double steering;
+    public double clutch;
+    public int gear;
+}
+
+[DllImport("racing_sim")]
 private static extern IntPtr VehicleSim_Create(double timestep);
 
-[DllImport("racing_sim_plugin")]
-private static extern void VehicleSim_Step(IntPtr sim);
+[DllImport("racing_sim")]
+private static extern void VehicleSim_Step(IntPtr sim, ref DriverInputs inputs);
 
-[DllImport("racing_sim_plugin")]
+[DllImport("racing_sim")]
 private static extern void VehicleSim_GetRenderData(
     IntPtr sim, out VehicleRenderData data);
 
@@ -220,12 +228,15 @@ void Start() {
 }
 
 void FixedUpdate() {
-    float throttle = Input.GetAxis("Throttle");
-    float brake = Input.GetAxis("Brake");
-    float steering = Input.GetAxis("Horizontal");
+    DriverInputs inputs = new DriverInputs {
+        throttle = Input.GetAxis("Throttle"),
+        brake = Input.GetAxis("Brake"),
+        steering = Input.GetAxis("Horizontal"),
+        clutch = 0.0,
+        gear = 1
+    };
     
-    VehicleSim_SetBasicInputs(simHandle, throttle, brake, steering);
-    VehicleSim_Step(simHandle);
+    VehicleSim_Step(simHandle, ref inputs);
 }
 
 void Update() {
@@ -251,8 +262,8 @@ void Update() {
 ## 🚀 Getting Started
 
 ### As Unity Developer:
-1. Read `UNITY_INTEGRATION.md`
-2. Check `unity_api.h` for function signatures
+1. Read `unity_api.h` for all function signatures and documentation
+2. See `README.md` for build instructions and C# interop example
 3. Build DLL from Visual Studio project
 4. Drop DLL into Unity `Assets/Plugins/`
 5. Create C# wrapper (see example above)
@@ -260,9 +271,8 @@ void Update() {
 7. Call Step() in FixedUpdate, GetRenderData() in Update
 
 ### As Physics Developer:
-1. Read `AI_CONTEXT.md`
-2. Read `copilotPlan.md` for implementation order
-3. Understand Guiggiani's three-equation structure
+1. Read `AI_CONTEXT.md` (architecture, status, next priorities)
+2. Understand Guiggiani's three-equation structure
 4. Start with tire models (Magic Formula)
 5. Implement vehicle components
 6. Build up to complete vehicle model
@@ -281,12 +291,10 @@ void Update() {
 ## 📚 Essential Reading Order
 
 1. **This file** - Overall architecture
-2. **AI_CONTEXT.md** - Detailed AI guide
-3. **UNITY_INTEGRATION.md** - Unity specifics
-4. **unity_api.h** - THE DLL interface
-5. **vehicle_model.h** - Three-equation structure
-6. **CODING_STANDARDS.md** - Code style
-7. **copilotPlan.md** - Implementation plan
+2. **AI_CONTEXT.md** - Architecture, standards, implementation status
+3. **unity_api.h** - THE DLL interface
+4. **vehicle_model.h** - Three-equation structure
+5. **include/README.md** - Header directory guide
 
 ---
 

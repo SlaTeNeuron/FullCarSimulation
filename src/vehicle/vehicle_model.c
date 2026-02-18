@@ -15,6 +15,9 @@
 #include "core/integrator/integrator_base.h"
 #include "core/integrator/semi_implicit_euler.h"
 #include "core/utils/logger.h"
+#include "core/math/vec3.h"
+#include "core/math/quat.h"
+#include "core/math/math_base.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -70,20 +73,39 @@ VDE_API void vehicle_model_get_state(const Vehicle* vehicle, VehicleState* out_s
         return;
     }
     
-    // ALPHA: Vehicle structure currently simplified
-    // Return basic state, expand when Vehicle structure is upgraded
-    
+    // Initialize state structure
     memset(out_state, 0, sizeof(VehicleState));
     
-    // ALPHA TODO: Get position and velocity from Vehicle structure
-    // For now, return zeros
-    out_state->position = vde_vec3_zero();
-    out_state->velocity = vde_vec3_zero();
+    // Get position from simplified 2D vehicle (ALPHA)
+    vde_real x = vehicle_get_x(vehicle);
+    vde_real y = vehicle_get_y(vehicle);
+    vde_real yaw = vehicle_get_yaw(vehicle);
+    vde_real vel = vehicle_get_velocity(vehicle);
     
-    // ALPHA TODO: Add orientation, angular velocity, wheel states
-    // when Vehicle structure is expanded to full 3D
+    // Convert 2D state to 3D VehicleState structure
+    out_state->position = vde_vec3_make(x, (vde_real)0.0, y);  // Y=0 for flat ground
     
-    out_state->time = 0.0; // TODO: track simulation time
+    // Convert yaw to quaternion (rotation around Y axis)
+    vde_vec3 up_axis = vde_vec3_make((vde_real)0.0, (vde_real)1.0, (vde_real)0.0);
+    out_state->orientation = vde_quat_from_axis_angle(&up_axis, yaw);
+    
+    // Convert 2D velocity to 3D (velocity in forward direction)
+    vde_real vx = vel * vde_cos(yaw);
+    vde_real vz = vel * vde_sin(yaw);
+    out_state->velocity = vde_vec3_make(vx, (vde_real)0.0, vz);
+    
+    // Angular velocity (yaw rate only in simplified model)
+    out_state->angular_velocity = vde_vec3_zero();
+    
+    // ALPHA: Wheel states - approximate based on velocity
+    vde_real wheel_radius = (vde_real)0.2;  // m
+    vde_real wheel_omega = (wheel_radius > (vde_real)0.0) ? vel / wheel_radius : (vde_real)0.0;
+    for (int i = 0; i < 4; i++) {
+        out_state->wheel_angular_vel[i] = wheel_omega;
+        out_state->suspension_deflection[i] = (vde_real)0.0;  // No suspension in 2D model yet
+    }
+    
+    out_state->time = (vde_real)0.0;  // Time tracking not in Vehicle struct yet
 }
 
 VDE_API void vehicle_model_set_state(Vehicle* vehicle, const VehicleState* state) {

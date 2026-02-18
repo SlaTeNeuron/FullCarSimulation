@@ -55,3 +55,9 @@ VDE_API void vehicle_compute_forces(Vehicle* v);
 
 // Telemetry
 VDE_API void vehicle_write_telemetry(Vehicle* v, vde_real* buffer, int len);
+
+// State access (for API integration)
+VDE_API vde_real vehicle_get_x(const Vehicle* v);
+VDE_API vde_real vehicle_get_y(const Vehicle* v);
+VDE_API vde_real vehicle_get_velocity(const Vehicle* v);
+VDE_API vde_real vehicle_get_yaw(const Vehicle* v);

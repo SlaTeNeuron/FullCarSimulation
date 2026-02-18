@@ -2,9 +2,9 @@
 
 A high-fidelity vehicle dynamics simulation engine written in modern C11, designed for racing applications with GPU compatibility in mind.
 
-**Status:** 🎯 ALPHA - Ready for DLL Build and Testing  
-**Current Version:** 0.3.0-alpha (Three-equation structure complete, user decisions implemented)  
-**Last Updated:** Alpha Transition
+**Status:** 🎯 ALPHA - DLL Fully Working, Ready for Unity Integration Testing  
+**Current Version:** 0.4.0-alpha (Unity API fully implemented, simulation running end-to-end)  
+**Last Updated:** February 18, 2026
 
 ---
 
@@ -68,12 +68,13 @@ The core simulation follows Section 3.12 of Guiggiani:
 
 | Module | Status | Description |
 |--------|--------|-------------|
+| **unity_api.c** | ✅ Complete | Full DLL implementation, all functions working |
 | **core/math/** | ✅ Complete | 3D vectors, quaternions, matrices, frames |
 | **core/integrator/** | ✅ Complete | Euler, RK4, Semi-implicit Euler |
 | **tire_models/** | ✅ Complete | Magic Formula + Brush tire models |
-| **vehicle/** | 🚧 Alpha | Three-equation structure, needs 3D expansion |
+| **vehicle/** | 👍 Working | Simple 2D dynamics, needs 3D expansion |
 | **track/** | 📝 Stub | Track geometry and surface |
-| **simulation/** | 🚧 Alpha | Basic loop, needs integration |
+| **simulation/** | ✅ Complete | Full integration with Unity API |
 
 ---
 
@@ -88,8 +89,15 @@ The core simulation follows Section 3.12 of Guiggiani:
 
 **Layer 2: Unity DLL API** (`src/unity_api.c` + `include/unity_api.h`)
 - Used by: Unity C# through P/Invoke
-- Functions: `VehicleSim_Create()`, `VehicleSim_Step()`, `VehicleSim_SetInputs()`, etc.
+- Status: ✅ FULLY IMPLEMENTED - All functions working, simulation runs end-to-end
+- Functions: `VehicleSim_Create()`, `VehicleSim_Step()`, `VehicleSim_GetRenderData()`, etc.
 - Purpose: Complete DLL boundary for Unity with comprehensive telemetry
+
+**Key API Change:** `VehicleSim_Step()` now takes `DriverInputs` as a parameter for better efficiency:
+```c
+void VehicleSim_Step(VehicleSimulation* sim, const DriverInputs* inputs)
+```
+This eliminates the need for separate `SetInputs()` calls.
 
 ### Unity DLL Functions
 
@@ -98,32 +106,59 @@ The core simulation follows Section 3.12 of Guiggiani:
 VehicleSimulation* VehicleSim_Create(double timestep)
 void VehicleSim_Destroy(VehicleSimulation* sim)
 int VehicleSim_Initialize(VehicleSimulation* sim)
+void VehicleSim_Reset(VehicleSimulation* sim)
 
-// Simulation Control
-void VehicleSim_Step(VehicleSimulation* sim)
-void VehicleSim_StepMultiple(VehicleSimulation* sim, int num_steps)
+// Simulation Control - NEW: Step takes inputs directly
+void VehicleSim_Step(VehicleSimulation* sim, const DriverInputs* inputs)
+void VehicleSim_StepMultiple(VehicleSimulation* sim, const DriverInputs* inputs, int num_steps)
 
-// Input/Output
-void VehicleSim_SetInputs(VehicleSimulation* sim, const DriverInputs* inputs)
+// Output - All fully implemented
 void VehicleSim_GetRenderData(const VehicleSimulation* sim, VehicleRenderData* out)
 void VehicleSim_GetTelemetry(const VehicleSimulation* sim, TelemetryFrame* out)
+void VehicleSim_RegisterTelemetryCallback(VehicleSimulation* sim, TelemetryCallback cb, void* data)
 
 // Asset Management
 int VehicleSim_LoadVehicle(VehicleSimulation* sim, const char* config_path)
 void VehicleSim_GetVehicleParameters(const VehicleSimulation* sim, VehicleParameters* out)
+void VehicleSim_GetTrackInfo(const VehicleSimulation* sim, TrackInfo* out)
+
+// Validation & Stats
+void VehicleSim_Validate(const VehicleSimulation* sim, ValidationResult* out)
+void VehicleSim_GetStats(const VehicleSimulation* sim, SimulationStats* out)
 ```
 
 ### C# Interop Example
 
 ```csharp
+[StructLayout(LayoutKind.Sequential)]
+public struct DriverInputs {
+    public double throttle;
+    public double brake;
+    public double steering;
+    public double clutch;
+    public int gear;
+}
+
 [DllImport("racing_sim")]
 private static extern IntPtr VehicleSim_Create(double timestep);
 
 [DllImport("racing_sim")]
-private static extern void VehicleSim_Step(IntPtr sim);
+private static extern void VehicleSim_Step(IntPtr sim, ref DriverInputs inputs);
 
 [DllImport("racing_sim")]
 private static extern void VehicleSim_GetRenderData(IntPtr sim, out VehicleRenderData data);
+
+// Usage in Unity
+void FixedUpdate() {
+    DriverInputs inputs = new DriverInputs {
+        throttle = Input.GetAxis("Throttle"),
+        brake = Input.GetAxis("Brake"),
+        steering = Input.GetAxis("Steering"),
+        clutch = 0.0,
+        gear = 1
+    };
+    VehicleSim_Step(simHandle, ref inputs);
+}
 ```
 
 See `include/unity_api.h` for complete API reference with 400+ lines of documentation.
@@ -215,9 +250,7 @@ FullCarSim/
 │
 ├── build/                # Build output directory
 │
-├── AI_CONTEXT.md         # 🤖 Quick reference for AI/developers
-├── CODING_STANDARDS.md   # 📖 Complete coding standards
-├── copilotPlan.txt       # 🗺️ Project roadmap
+├── AI_CONTEXT.md         # 🤖 Architecture, standards, and implementation status
 └── README.md             # 📄 This file
 ```
 
@@ -273,9 +306,9 @@ Racing simulations must be robust:
 ---
 
 ## 🔄 Changelog
-- Architecture → Update copilotPlan.txt
-- Standards → Update CODING_STANDARDS.md
-- Key patterns → Update AI_CONTEXT.md
+- Architecture → Update `AI_CONTEXT.md`
+- Standards → Update `AI_CONTEXT.md` > Standards Summary
+- Key patterns → Update `AI_CONTEXT.md`
 - Build process → Update this README
 
 **Always update the "Last Updated" date at the top of modified docs.**

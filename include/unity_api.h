@@ -7,6 +7,15 @@
 // ARCHITECTURE:
 //   Unity (C#) → DLL Boundary (this file) → Internal Physics (vehicle_model.h, etc.)
 //
+// COORDINATE SYSTEM:
+//   All positions, velocities, orientations, and normals exposed through this API
+//   are expressed in Unity world space:
+//     X = right   (lateral)
+//     Y = up      (vertical)    ← left-handed system
+//     Z = forward (longitudinal)
+//   The DLL converts from the internal physics convention (X=forward, Y=down, Z=right,
+//   right-handed) at the API boundary — Unity consumers do not need to remap axes.
+//
 // DESIGN PRINCIPLES:
 //   - Simple C types for easy marshaling to C#
 //   - Grouped by responsibility (Lifecycle, Inputs, Outputs, Assets)
@@ -70,22 +79,7 @@ UNITY_API int VehicleSim_Initialize(VehicleSimulation* sim);
 UNITY_API void VehicleSim_Reset(VehicleSimulation* sim);
 
 //=========================
-// 2. SIMULATION CONTROL
-//=========================
-
-/// Step simulation forward by one physics timestep
-/// Call this in a loop at the physics rate (e.g., 1000 Hz)
-UNITY_API void VehicleSim_Step(VehicleSimulation* sim);
-
-/// Step simulation multiple times (for catching up)
-/// @param num_steps Number of physics steps to execute
-UNITY_API void VehicleSim_StepMultiple(VehicleSimulation* sim, int num_steps);
-
-/// Get current simulation time
-UNITY_API double VehicleSim_GetTime(const VehicleSimulation* sim);
-
-//=========================
-// 3. INPUT INTERFACE (Unity → DLL)
+// 2. INPUT STRUCTURES
 //=========================
 
 /// Driver control inputs structure
@@ -97,50 +91,67 @@ typedef struct DriverInputs {
     int gear;               // -1 = reverse, 0 = neutral, 1-6 = forward gears
 } DriverInputs;
 
-/// Set driver inputs
-UNITY_API void VehicleSim_SetInputs(VehicleSimulation* sim, const DriverInputs* inputs);
+//=========================
+// 3. SIMULATION CONTROL
+//=========================
 
-/// Convenience: Set basic inputs (throttle, brake, steering only)
-UNITY_API void VehicleSim_SetBasicInputs(
-    VehicleSimulation* sim,
-    double throttle,
-    double brake,
-    double steering
-);
+/// Step simulation forward by one physics timestep with the given inputs
+/// This is the primary stepping function - inputs are applied directly for this step
+/// @param inputs Driver control inputs for this timestep
+/// Call this in a loop at the physics rate (e.g., 1000 Hz)
+UNITY_API void VehicleSim_Step(VehicleSimulation* sim, const DriverInputs* inputs);
+
+/// Step simulation multiple times with the same inputs (for catching up)
+/// @param inputs Driver control inputs to use for all steps
+/// @param num_steps Number of physics steps to execute
+UNITY_API void VehicleSim_StepMultiple(VehicleSimulation* sim, const DriverInputs* inputs, int num_steps);
+
+/// Get current simulation time
+UNITY_API double VehicleSim_GetTime(const VehicleSimulation* sim);
+
+//=========================
+// 3a. INPUT UTILITIES
+//=========================
+
+/// Get last applied driver inputs (for debugging)
+UNITY_API void VehicleSim_GetInputs(const VehicleSimulation* sim, DriverInputs* out_inputs);
 
 //=========================
 // 4. RENDERING DATA (DLL → Unity)
 //=========================
 
-/// Vehicle chassis state for Unity rendering
+/// Vehicle chassis state for Unity rendering.
+/// All fields are in Unity world space: X=right, Y=up, Z=forward (left-handed).
 typedef struct ChassisRenderData {
-    // Position (world space, meters)
-    double position_x;
-    double position_y;
-    double position_z;
+    // Position (Unity world space, meters)
+    double position_x;      // +X right
+    double position_y;      // +Y up
+    double position_z;      // +Z forward
     
-    // Orientation (quaternion: w, x, y, z)
+    // Orientation quaternion (Unity convention: w, x, y, z)
     double orientation_w;
     double orientation_x;
     double orientation_y;
     double orientation_z;
     
-    // Velocities (for motion blur, particle effects)
-    double velocity_x;      // m/s
+    // Linear velocity (Unity world space, m/s)
+    double velocity_x;
     double velocity_y;
     double velocity_z;
     
-    double angular_vel_x;   // rad/s
+    // Angular velocity (Unity world space, rad/s, left-hand rule)
+    double angular_vel_x;
     double angular_vel_y;
     double angular_vel_z;
 } ChassisRenderData;
 
-/// Individual wheel state for Unity rendering
+/// Individual wheel state for Unity rendering.
+/// All positional fields are in Unity world space: X=right, Y=up, Z=forward.
 typedef struct WheelRenderData {
-    // Position (world space, meters)
-    double position_x;
-    double position_y;
-    double position_z;
+    // Position (Unity world space, meters)
+    double position_x;      // +X right
+    double position_y;      // +Y up
+    double position_z;      // +Z forward
     
     // Rotation angle (radians, for spinning animation)
     double rotation_angle;
@@ -155,10 +166,10 @@ typedef struct WheelRenderData {
     double longitudinal_slip;  // dimensionless
     double lateral_slip;       // radians
     
-    // Tire forces (for debugging visualization)
-    double tire_force_x;       // N
-    double tire_force_y;       // N
-    double tire_force_z;       // N (normal load)
+    // Tire forces (Unity world space, N)
+    double tire_force_x;       // N  (+X right)
+    double tire_force_y;       // N  (+Y up / normal load)
+    double tire_force_z;       // N  (+Z forward)
     
     // Contact state
     int is_grounded;           // 0 = airborne, 1 = contact
@@ -192,19 +203,20 @@ UNITY_API void VehicleSim_GetRenderData(
 // 5. TELEMETRY OUTPUT (DLL → Unity/File)
 //=========================
 
-/// Comprehensive telemetry data for analysis and dataset generation
+/// Comprehensive telemetry data for analysis and dataset generation.
+/// All vector quantities are in Unity world space: X=right, Y=up, Z=forward.
 typedef struct TelemetryFrame {
     // Time
     double time;                       // seconds
     double delta_time;                 // seconds since last frame
     
-    // Chassis state
-    double position[3];                // x, y, z (m)
-    double velocity[3];                // vx, vy, vz (m/s)
-    double acceleration[3];            // ax, ay, az (m/s²)
-    double orientation[4];             // quaternion: w, x, y, z
-    double angular_velocity[3];        // p, q, r (rad/s)
-    double angular_acceleration[3];    // p_dot, q_dot, r_dot (rad/s²)
+    // Chassis state (Unity world space)
+    double position[3];                // [x_right, y_up, z_forward] (m)
+    double velocity[3];                // [vx, vy, vz] (m/s)
+    double acceleration[3];            // [ax, ay, az] (m/s²)
+    double orientation[4];             // quaternion [w, x, y, z] (Unity convention)
+    double angular_velocity[3];        // [wx, wy, wz] (rad/s, left-hand rule)
+    double angular_acceleration[3];    // [alpha_x, alpha_y, alpha_z] (rad/s²)
     
     // Derived quantities
     double speed;                      // magnitude of velocity (m/s)
@@ -338,8 +350,8 @@ typedef struct TrackInfo {
     char name[256];                    // Track name
     double length;                     // m
     int num_sectors;                   // Number of track sectors
-    double start_position[3];          // x, y, z starting position
-    double start_orientation[4];       // quaternion: w, x, y, z
+    double start_position[3];          // Unity world space: [x_right, y_up, z_forward] (m)
+    double start_orientation[4];       // Unity quaternion: [w, x, y, z]
 } TrackInfo;
 
 /// Get track information (after loading)
@@ -348,12 +360,13 @@ UNITY_API void VehicleSim_GetTrackInfo(
     TrackInfo* out_info
 );
 
-/// Query track surface properties at a position
+/// Query track surface properties at a position.
+/// All position and normal values are in Unity world space (X=right, Y=up, Z=forward).
 typedef struct SurfaceQuery {
-    double position[3];                // Input: query position (x, y, z)
-    double normal[3];                  // Output: surface normal
+    double position[3];                // Input:  query position [x_right, y_up, z_forward] (m)
+    double normal[3];                  // Output: surface normal (Unity world space)
     double friction_coefficient;       // Output: friction at this point
-    double elevation;                  // Output: elevation (z coordinate)
+    double elevation;                  // Output: Y elevation (m)
     int is_valid;                      // Output: 1 if query succeeded
 } SurfaceQuery;
 
@@ -367,12 +380,61 @@ UNITY_API void VehicleSim_QuerySurface(
 // 7. ERROR HANDLING
 //=========================
 
-/// Get last error message
-/// @return Null-terminated error string, or NULL if no error
+/// Error severity levels
+typedef enum SimErrorLevel {
+    SIM_LOG_DEBUG   = 0,   // Verbose diagnostics
+    SIM_LOG_INFO    = 1,   // Normal operational messages
+    SIM_LOG_WARN    = 2,   // Non-fatal problems (e.g. alpha stubs)
+    SIM_LOG_ERROR   = 3    // Failures that prevent correct operation
+} SimErrorLevel;
+
+/// Real-time log callback - Unity subscribes to receive every logged message
+/// as it is emitted, including inside VehicleSim_Step.
+/// @param level   Severity of the message
+/// @param message Null-terminated, UTF-8 string
+/// @param user_data Opaque pointer supplied at registration
+typedef void (*SimLogCallback)(SimErrorLevel level, const char* message, void* user_data);
+
+/// Register a callback that receives every log message in real time.
+/// Pass NULL to unregister.  Safe to call before Initialize.
+/// Unity C#: use [MonoPInvokeCallback] and DontDestroyOnLoad on the delegate.
+UNITY_API void VehicleSim_SetLogCallback(
+    VehicleSimulation* sim,
+    SimLogCallback callback,
+    void* user_data
+);
+
+/// Get last error message.  Returns a non-empty string whenever an error was
+/// recorded since the last VehicleSim_ClearError call.
+/// The string is owned by the sim; copy it before the next API call.
+/// @return Null-terminated error string (never NULL)
 UNITY_API const char* VehicleSim_GetLastError(const VehicleSimulation* sim);
 
-/// Clear error state
+/// Clear error state (last error string and the full log)
 UNITY_API void VehicleSim_ClearError(VehicleSimulation* sim);
+
+/// Copy the full recent error log into caller-supplied buffer.
+/// Each entry is one line: "[T=nnn.nnn][LEVEL] message\n"
+/// Up to the last 32 errors are retained (oldest dropped first).
+/// @param out_buf   Caller-allocated buffer to receive the log text
+/// @param buf_size  Size of out_buf in bytes
+UNITY_API void VehicleSim_GetErrorLog(
+    const VehicleSimulation* sim,
+    char* out_buf,
+    int buf_size
+);
+
+/// Copy a complete human-readable diagnostic snapshot into caller-supplied buffer.
+/// Includes: init state, timestep, total steps, sim time, vehicle pointer,
+/// last error, and the full error log.  Useful as the first thing to read
+/// when debugging a silent failure.
+/// @param out_buf   Caller-allocated buffer (recommend >= 4096 bytes)
+/// @param buf_size  Size of out_buf in bytes
+UNITY_API void VehicleSim_GetDiagnostics(
+    const VehicleSimulation* sim,
+    char* out_buf,
+    int buf_size
+);
 
 //=========================
 // 8. DEBUGGING & VALIDATION
@@ -413,85 +475,97 @@ UNITY_API void VehicleSim_GetStats(
 //=========================
 
 /*
+using System;
 using System.Runtime.InteropServices;
+using AOT; // MonoPInvokeCallback
 
-public class VehicleSimulationWrapper 
+public class VehicleSimulationWrapper : MonoBehaviour
 {
-    [DllImport("racing_sim_plugin")]
-    private static extern IntPtr VehicleSim_Create(double timestep);
-    
-    [DllImport("racing_sim_plugin")]
-    private static extern void VehicleSim_Destroy(IntPtr sim);
-    
-    [DllImport("racing_sim_plugin")]
-    private static extern int VehicleSim_LoadVehicle(IntPtr sim, string vehiclePath);
-    
-    [DllImport("racing_sim_plugin")]
-    private static extern int VehicleSim_LoadTrack(IntPtr sim, string trackPath);
-    
-    [DllImport("racing_sim_plugin")]
-    private static extern int VehicleSim_Initialize(IntPtr sim);
-    
-    [DllImport("racing_sim_plugin")]
-    private static extern void VehicleSim_Step(IntPtr sim);
-    
-    [DllImport("racing_sim_plugin")]
-    private static extern void VehicleSim_SetBasicInputs(IntPtr sim, double throttle, double brake, double steer);
-    
-    [DllImport("racing_sim_plugin")]
-    private static extern void VehicleSim_GetRenderData(IntPtr sim, out VehicleRenderData data);
-    
+    // DLL output name is "racing_sim" (set by CMakeLists.txt OUTPUT_NAME)
+    [DllImport("racing_sim")] private static extern IntPtr VehicleSim_Create(double timestep);
+    [DllImport("racing_sim")] private static extern void   VehicleSim_Destroy(IntPtr sim);
+    [DllImport("racing_sim")] private static extern int    VehicleSim_LoadVehicle(IntPtr sim, string path);
+    [DllImport("racing_sim")] private static extern int    VehicleSim_LoadTrack(IntPtr sim, string path);
+    [DllImport("racing_sim")] private static extern int    VehicleSim_Initialize(IntPtr sim);
+    [DllImport("racing_sim")] private static extern void   VehicleSim_Step(IntPtr sim, ref DriverInputs inputs);
+    [DllImport("racing_sim")] private static extern void   VehicleSim_GetRenderData(IntPtr sim, out VehicleRenderData data);
+    [DllImport("racing_sim")] private static extern IntPtr VehicleSim_GetLastError(IntPtr sim);
+    [DllImport("racing_sim")] private static extern void   VehicleSim_ClearError(IntPtr sim);
+    [DllImport("racing_sim")] private static extern void   VehicleSim_GetErrorLog(IntPtr sim, System.Text.StringBuilder buf, int size);
+    [DllImport("racing_sim")] private static extern void   VehicleSim_GetDiagnostics(IntPtr sim, System.Text.StringBuilder buf, int size);
+
+    // --- Log callback ---
+    // int matches SimErrorLevel: 0=DEBUG, 1=INFO, 2=WARN, 3=ERROR
+    delegate void SimLogCallback(int level, IntPtr message, IntPtr userData);
+    [DllImport("racing_sim")] private static extern void VehicleSim_SetLogCallback(IntPtr sim, SimLogCallback cb, IntPtr userData);
+
+    [MonoPInvokeCallback(typeof(SimLogCallback))]
+    private static void OnSimLog(int level, IntPtr messagePtr, IntPtr _) {
+        string msg = Marshal.PtrToStringAnsi(messagePtr) ?? "<null>";
+        string prefix = level >= 3 ? "[SIM ERROR]" : level == 2 ? "[SIM WARN]" : "[SIM]";
+        if (level >= 3) Debug.LogError(prefix + " " + msg);
+        else if (level == 2) Debug.LogWarning(prefix + " " + msg);
+        else Debug.Log(prefix + " " + msg);
+    }
+    // Keep a static reference so the GC won't collect the delegate
+    private static SimLogCallback _logCallbackRef = OnSimLog;
+
     private IntPtr simHandle;
-    
+
     void Start() {
-        // Create simulation (1 ms timestep)
-        simHandle = VehicleSim_Create(0.001);
-        
-        // Load assets
-        VehicleSim_LoadVehicle(simHandle, "data/vehicles/TBReCar.txt");
-        VehicleSim_LoadTrack(simHandle, "data/tracks/skidpad.txt");
-        
-        // Initialize
-        VehicleSim_Initialize(simHandle);
+        simHandle = VehicleSim_Create(0.001); // 1 ms timestep
+        if (simHandle == IntPtr.Zero) { Debug.LogError("VehicleSim_Create returned NULL"); return; }
+
+        // Wire up real-time log callback BEFORE any other call
+        VehicleSim_SetLogCallback(simHandle, _logCallbackRef, IntPtr.Zero);
+
+        int err;
+        err = VehicleSim_LoadVehicle(simHandle, "data/vehicles/TBReCar.txt");
+        if (err != 0) { LogAndDump("LoadVehicle failed"); return; }
+
+        err = VehicleSim_LoadTrack(simHandle, "data/tracks/skidpad.txt");
+        if (err != 0) { LogAndDump("LoadTrack failed"); return; }
+
+        err = VehicleSim_Initialize(simHandle);
+        if (err != 0) { LogAndDump("Initialize failed"); return; }
     }
-    
+
     void FixedUpdate() {
-        // Get input from player
-        float throttle = Input.GetAxis("Throttle");
-        float brake = Input.GetAxis("Brake");
-        float steering = Input.GetAxis("Steering");
-        
-        // Send to simulation
-        VehicleSim_SetBasicInputs(simHandle, throttle, brake, steering);
-        
-        // Step physics
-        VehicleSim_Step(simHandle);
+        if (simHandle == IntPtr.Zero) return;
+        DriverInputs inputs = new DriverInputs {
+            throttle = Input.GetAxis("Throttle"),
+            brake    = Input.GetAxis("Brake"),
+            steering = Input.GetAxis("Horizontal"),
+            clutch   = 0.0, gear = 1
+        };
+        VehicleSim_Step(simHandle, ref inputs);
     }
-    
+
     void Update() {
-        // Get render data
-        VehicleRenderData renderData;
-        VehicleSim_GetRenderData(simHandle, out renderData);
-        
-        // Update Unity transforms
-        transform.position = new Vector3(
-            (float)renderData.chassis.position_x,
-            (float)renderData.chassis.position_y,
-            (float)renderData.chassis.position_z
-        );
-        
-        transform.rotation = new Quaternion(
-            (float)renderData.chassis.orientation_x,
-            (float)renderData.chassis.orientation_y,
-            (float)renderData.chassis.orientation_z,
-            (float)renderData.chassis.orientation_w
-        );
-        
-        // Update wheels...
+        if (simHandle == IntPtr.Zero) return;
+        VehicleRenderData data;
+        VehicleSim_GetRenderData(simHandle, out data);
+        // Positions and quaternions are already in Unity world space (X=right, Y=up, Z=forward).
+        // Assign directly — no axis remapping required.
+        transform.position = new Vector3((float)data.chassis.position_x,
+                                         (float)data.chassis.position_y,
+                                         (float)data.chassis.position_z);
+        transform.rotation = new Quaternion((float)data.chassis.orientation_x,
+                                            (float)data.chassis.orientation_y,
+                                            (float)data.chassis.orientation_z,
+                                            (float)data.chassis.orientation_w);
     }
-    
-    void OnDestroy() {
-        VehicleSim_Destroy(simHandle);
+
+    void OnDestroy() { if (simHandle != IntPtr.Zero) VehicleSim_Destroy(simHandle); }
+
+    // Helper: print the full diagnostic dump to the Unity console
+    void LogAndDump(string context) {
+        string lastErr = Marshal.PtrToStringAnsi(VehicleSim_GetLastError(simHandle)) ?? "<null>";
+        Debug.LogError($"[VehicleSim] {context} | LastError: {lastErr}");
+
+        var diag = new System.Text.StringBuilder(4096);
+        VehicleSim_GetDiagnostics(simHandle, diag, diag.Capacity);
+        Debug.LogError("[VehicleSim] Diagnostics:\n" + diag.ToString());
     }
 }
 */

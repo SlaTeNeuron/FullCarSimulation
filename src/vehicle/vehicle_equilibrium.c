@@ -1,9 +1,9 @@
 #include "vehicle/vehicle_equilibrium.h"
 #include "vehicle/vehicle_model.h"  // For LoadTransfers definition
 #include "vehicle/vehicle.h"
+#include "core/math/math_base.h"
 #include "core/math/vec3.h"
 #include "core/math/mat3.h"
-#include <math.h>
 
 //-------------------------
 // Force Assembly (Guiggiani Section 3.5)
@@ -28,7 +28,7 @@
  * Output:
  *   - out_forces: All forces and moments assembled
  */
-void vehicle_equilibrium_assemble_forces(
+VDE_API void vehicle_equilibrium_assemble_forces(
     const Vehicle* vehicle,
     VehicleForces* out_forces
 ) {
@@ -78,7 +78,7 @@ void vehicle_equilibrium_assemble_forces(
  * Output:
  *   - out_transfers: Load transfer values and vertical loads
  */
-void vehicle_equilibrium_compute_load_transfers(
+VDE_API void vehicle_equilibrium_compute_load_transfers(
     const Vehicle* vehicle,
     const VehicleForces* forces,
     LoadTransfers* out_transfers
@@ -185,7 +185,7 @@ void vehicle_equilibrium_compute_load_transfers(
  * Output:
  *   - out_eom: Equations of motion ready to solve
  */
-void vehicle_equilibrium_build_equations(
+VDE_API void vehicle_equilibrium_build_equations(
     const Vehicle* vehicle,
     const VehicleForces* forces,
     EquationsOfMotion* out_eom
@@ -229,7 +229,7 @@ void vehicle_equilibrium_build_equations(
  *   - out_linear_accel: Body-frame linear acceleration (u_dot, v_dot, w_dot)
  *   - out_angular_accel: Body-frame angular acceleration (p_dot, q_dot, r_dot)
  */
-void vehicle_equilibrium_solve_accelerations(
+VDE_API void vehicle_equilibrium_solve_accelerations(
     const EquationsOfMotion* eom,
     vde_vec3* out_linear_accel,
     vde_vec3* out_angular_accel
@@ -302,13 +302,12 @@ void vehicle_equilibrium_solve_accelerations(
  * Output:
  *   - Accelerations of sprung mass
  */
-void vehicle_equilibrium_sprung_mass(
+VDE_API void vehicle_equilibrium_sprung_mass(
     const Vehicle* vehicle,
-    const vde_vec3* suspension_forces,
-    vde_vec3* out_linear_accel,
-    vde_vec3* out_angular_accel
+    vde_vec3* out_force,
+    vde_vec3* out_moment
 ) {
-    if (!vehicle || !suspension_forces || !out_linear_accel || !out_angular_accel) return;
+    if (!vehicle || !out_force || !out_moment) return;
     
     // TODO: Implement sprung mass equilibrium
     // 1. Sum suspension forces
@@ -316,8 +315,8 @@ void vehicle_equilibrium_sprung_mass(
     // 3. Solve for sprung mass accelerations
     
     // Placeholder
-    *out_linear_accel = vde_vec3_zero();
-    *out_angular_accel = vde_vec3_zero();
+    *out_force = vde_vec3_zero();
+    *out_moment = vde_vec3_zero();
 }
 
 /**
@@ -336,14 +335,13 @@ void vehicle_equilibrium_sprung_mass(
  * Output:
  *   - Acceleration of unsprung mass
  */
-void vehicle_equilibrium_unsprung_mass(
+VDE_API void vehicle_equilibrium_unsprung_mass(
     const Vehicle* vehicle,
     int corner_index,
-    const vde_vec3* tire_force,
-    const vde_vec3* suspension_force,
-    vde_vec3* out_accel
+    vde_vec3* out_force,
+    vde_vec3* out_moment
 ) {
-    if (!vehicle || !tire_force || !suspension_force || !out_accel) return;
+    if (!vehicle || !out_force || !out_moment) return;
     if (corner_index < 0 || corner_index >= 4) return;
     
     // TODO: Implement unsprung mass equilibrium
@@ -351,7 +349,8 @@ void vehicle_equilibrium_unsprung_mass(
     // F = F_tire - F_suspension - m_unsprung*g
     
     // Placeholder
-    *out_accel = vde_vec3_zero();
+    *out_force = vde_vec3_zero();
+    *out_moment = vde_vec3_zero();
 }
 
 //-------------------------
@@ -373,7 +372,7 @@ void vehicle_equilibrium_unsprung_mass(
  * Output:
  *   - Roll angle and rate
  */
-void vehicle_equilibrium_compute_roll(
+VDE_API void vehicle_equilibrium_compute_roll(
     const Vehicle* vehicle,
     vde_real lateral_accel,
     vde_real* out_roll_angle,

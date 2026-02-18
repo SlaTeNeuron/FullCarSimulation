@@ -92,7 +92,7 @@ set(DEBUG_SRC
 add_library(racing_sim SHARED ${CORE_SRC} ${DLL_SRC})
 
 # Define BUILDING_DLL when compiling the library
-target_compile_definitions(racing_sim PRIVATE BUILDING_DLL)
+target_compile_definitions(racing_sim PRIVATE BUILDING_DLL _CRT_SECURE_NO_WARNINGS)
 
 # Optional: define platform exports
 if (WIN32)

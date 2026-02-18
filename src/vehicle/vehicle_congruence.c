@@ -2,7 +2,7 @@
 #include "vehicle/vehicle.h"
 #include "vehicle/wheel.h"
 #include "tire_models/tire_utilities.h"
-#include <math.h>
+#include "core/math/math_base.h"
 
 //-------------------------
 // Vehicle Velocities (Guiggiani Section 3.2.1)
@@ -23,7 +23,7 @@
  * Output:
  *   - out_velocities: Filled with current vehicle velocities
  */
-void vehicle_congruence_compute_velocities(
+VDE_API void vehicle_congruence_compute_velocities(
     const Vehicle* vehicle,
     VehicleVelocities* out_velocities
 ) {
@@ -72,7 +72,7 @@ void vehicle_congruence_compute_velocities(
  * Output:
  *   - out_velocity: Velocity at contact point
  */
-void vehicle_congruence_compute_wheel_velocity(
+VDE_API void vehicle_congruence_compute_wheel_velocity(
     const Vehicle* vehicle,
     int corner_index,
     WheelContactVelocity* out_velocity
@@ -112,7 +112,7 @@ void vehicle_congruence_compute_wheel_velocity(
  * Output:
  *   - out_slips: Computed tire slips
  */
-void vehicle_congruence_compute_tire_slips(
+VDE_API void vehicle_congruence_compute_tire_slips(
     const Vehicle* vehicle,
     int corner_index,
     TireSlips* out_slips
@@ -136,7 +136,7 @@ void vehicle_congruence_compute_tire_slips(
 /**
  * Compute all tire slips for all four wheels
  */
-void vehicle_congruence_compute_all_tire_slips(
+VDE_API void vehicle_congruence_compute_all_tire_slips(
     const Vehicle* vehicle,
     TireSlips* out_slips
 ) {
@@ -164,7 +164,7 @@ void vehicle_congruence_compute_all_tire_slips(
  * Output:
  *   - out_center: Velocity center position and curvature
  */
-void vehicle_congruence_compute_velocity_center(
+VDE_API void vehicle_congruence_compute_velocity_center(
     const Vehicle* vehicle,
     VelocityCenter* out_center
 ) {
@@ -200,7 +200,7 @@ void vehicle_congruence_compute_velocity_center(
  * Output:
  *   - out_inner, out_outer: Individual wheel steer angles
  */
-void vehicle_congruence_compute_ackermann_angles(
+VDE_API void vehicle_congruence_compute_ackermann_angles(
     vde_real steer_angle,
     vde_real wheelbase,
     vde_real track_width,
@@ -223,17 +223,17 @@ void vehicle_congruence_compute_ackermann_angles(
     }
     
     // Compute turn radius at vehicle center
-    vde_real R = wheelbase / tan(steer_angle);
+    vde_real R = wheelbase / vde_tan(steer_angle);
     
     // Geometric Ackermann: each wheel points to instantaneous center
     if (steer_angle > (vde_real)0.0) {
         // Turning left: left is inner, right is outer
-        *out_inner = atan(wheelbase / (R - track_width * (vde_real)0.5));
-        *out_outer = atan(wheelbase / (R + track_width * (vde_real)0.5));
+        *out_inner = vde_atan(wheelbase / (R - track_width * (vde_real)0.5));
+        *out_outer = vde_atan(wheelbase / (R + track_width * (vde_real)0.5));
     } else {
         // Turning right: right is inner, left is outer
-        *out_inner = atan(wheelbase / (R + track_width * (vde_real)0.5));
-        *out_outer = atan(wheelbase / (R - track_width * (vde_real)0.5));
+        *out_inner = vde_atan(wheelbase / (R + track_width * (vde_real)0.5));
+        *out_outer = vde_atan(wheelbase / (R - track_width * (vde_real)0.5));
     }
 }
 
@@ -254,7 +254,7 @@ void vehicle_congruence_compute_ackermann_angles(
  * Output:
  *   - out_deflection_rates: Deflection rates for each corner (m/s)
  */
-void vehicle_congruence_compute_suspension_rates(
+VDE_API void vehicle_congruence_compute_suspension_rates(
     const Vehicle* vehicle,
     vde_real* out_deflection_rates
 ) {
@@ -284,7 +284,7 @@ void vehicle_congruence_compute_suspension_rates(
  * Output:
  *   - Returns 1 if valid, 0 if issues detected
  */
-int vehicle_congruence_validate(const Vehicle* vehicle) {
+VDE_API int vehicle_congruence_validate(const Vehicle* vehicle) {
     if (!vehicle) return 0;
     
     // TODO: Implement validation checks

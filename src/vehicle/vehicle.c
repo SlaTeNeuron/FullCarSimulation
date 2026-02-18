@@ -1,6 +1,6 @@
 #include "vehicle/vehicle.h"
+#include "core/math/math_base.h"
 #include <stdlib.h>
-#include <math.h>
 
 //-------------------------
 // Internal State
@@ -63,8 +63,8 @@ void vehicle_step(Vehicle* v, vde_real dt) {
     v->yaw += v->steer * (vde_real)0.5 * dt;
     
     // Update position
-    v->px += v->vel * dt * (vde_real)cos(v->yaw);
-    v->py += v->vel * dt * (vde_real)sin(v->yaw);
+    v->px += v->vel * dt * vde_cos(v->yaw);
+    v->py += v->vel * dt * vde_sin(v->yaw);
     
     // Defensive: check for numerical issues
     if (!vde_isfinite(v->px) || !vde_isfinite(v->py) || !vde_isfinite(v->vel) || !vde_isfinite(v->yaw)) {
@@ -86,4 +86,24 @@ void vehicle_write_telemetry(Vehicle* v, vde_real* buffer, int len) {
     buffer[1] = v->py;
     buffer[2] = v->vel;
     buffer[3] = v->yaw;
+}
+
+//-------------------------
+// State Access (for Unity API)
+//-------------------------
+
+vde_real vehicle_get_x(const Vehicle* v) {
+    return v ? v->px : (vde_real)0.0;
+}
+
+vde_real vehicle_get_y(const Vehicle* v) {
+    return v ? v->py : (vde_real)0.0;
+}
+
+vde_real vehicle_get_velocity(const Vehicle* v) {
+    return v ? v->vel : (vde_real)0.0;
+}
+
+vde_real vehicle_get_yaw(const Vehicle* v) {
+    return v ? v->yaw : (vde_real)0.0;
 }

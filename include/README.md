@@ -8,9 +8,9 @@
 include/
 ├── core/                    Core engine subsystems
 │   ├── math/               ✅ 3D math library (complete)
-│   ├── integrator/         📝 Numerical integrators
+│   ├── integrator/         ✅ Numerical integrators (Euler, RK4, Semi-implicit)
 │   ├── physics/            📝 Dynamics solvers
-│   └── utils/              📝 Utilities (logger)
+│   └── utils/              ✅ Utilities (logger)
 │
 ├── vehicle/                Vehicle components (Guiggiani Ch 3)
 │   ├── vehicle_model.h     ⭐ Master header - three-equation structure
@@ -104,7 +104,7 @@ Guiggiani introduces tires FIRST because:
 3. Critical for all vehicle dynamics
 4. Must understand before vehicle model
 
-**Implementation Priority:** HIGH (copilotPlan.md Phase 2)
+**Implementation Priority:** HIGH (tire forces are the foundation of all grip)
 
 ### Chapter 3: Integrated Vehicle Model 🚗
 **Directory:** `vehicle/`
@@ -115,7 +115,7 @@ Complete vehicle with ALL subsystems:
 - Load transfers fundamental
 - Not a "build up" approach - integrated from start
 
-**Implementation Priority:** HIGH (Phase 3)
+**Implementation Priority:** HIGH - full 3D vehicle is the main near-term goal
 
 ### Chapters 4-7: Applications 🏎️
 - Chapter 4: Braking (`vehicle/brakes.h`)
@@ -123,21 +123,21 @@ Complete vehicle with ALL subsystems:
 - Chapter 6: Road car handling (`vehicle/driveline.h` - open diff)
 - Chapter 7: Race car handling (`vehicle/aerodynamics.h`, locked diff)
 
-**Implementation Priority:** MEDIUM (Phases 4-6)
+**Implementation Priority:** MEDIUM - after all basic handling cases
 
 ### Chapter 8: Ride Comfort 🛣️
 **Directory:** `vehicle/suspension.h`
 
 Quarter car and full vehicle ride analysis.
 
-**Implementation Priority:** MEDIUM (Phase 7)
+**Implementation Priority:** MEDIUM - after vehicle model core is solid
 
 ### Chapter 9: Full 3D Dynamics 🌐
 **Directory:** `vehicle/sprung_mass.h`, `core/math/`
 
 Roll, pitch, yaw - complete 6DOF.
 
-**Implementation Priority:** HIGH (Phase 8)
+**Implementation Priority:** HIGH - required for realistic load transfers and ride
 
 ### Chapter 10: Advanced Tire Theory 🔬
 **Directory:** `tire_models/brush_models.h`
@@ -151,9 +151,9 @@ Physical brush model - detailed theory.
 ## 🚀 Quick Start Guide
 
 ### For AI Assistants:
-1. **Read** `AI_CONTEXT.md` first - 30-second overview
-2. **Check** `CODING_STANDARDS.md` - coding rules
-3. **Follow** `copilotPlan.md` - implementation phases
+1. **Read** `AI_CONTEXT.md` first - architecture and 30-second overview
+2. **Check** `AI_CONTEXT.md` > Standards Summary for coding rules
+3. **See** `AI_CONTEXT.md` > Next Priorities for implementation order
 
 ### For Developers:
 1. Start with `vehicle/vehicle_model.h` - understand structure
@@ -212,26 +212,33 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 ### Complete (Headers + Implementation):
 - ✅ `core/math/` - Full 3D math library
+- ✅ `core/integrator/` - Euler, RK4, Semi-implicit Euler
+- ✅ `core/utils/logger` - Logging with levels, file output, callbacks
+- ✅ `tire_models/magic_formula` - Full Pacejka Magic Formula
+- ✅ `tire_models/brush_models` - Simplified brush model
+- ✅ `tire_models/tire_utilities` - Slip calculations
+- ✅ `vehicle/tire.c` - Tire component with model dispatch
 - ✅ `simulation/simulation_config.h` - Basic simulation API
 
-### API Defined (Headers complete):
-- ✅ All headers have complete function signatures
-- ✅ All headers have Guiggiani references
-- ✅ Three-equation structure headers created
-- ✅ READMEs explaining organization
+### Scaffolded (structure + placeholder logic):
+- 🚧 `vehicle/vehicle_congruence.c` - Ackermann works; others return zeros
+- 🚧 `vehicle/vehicle_constitutive.c` - Linear suspension works; tires return zeros
+- 🚧 `vehicle/vehicle_equilibrium.c` - Load transfer works; force assembly returns zeros
+- 🚧 `vehicle/vehicle_model.c` - State retrieval works; full step pending
+- 🚧 `vehicle/wheel`, `suspension`, `brakes`, `aero`, `steering`, `driveline` - Partial
 
-### Next Steps (Implementation needed):
-See `copilotPlan.md` for detailed roadmap:
-1. **Phase 1**: Numerical integrators
-2. **Phase 2**: Tire models (Magic Formula START HERE)
-3. **Phase 3**: Complete vehicle model
-4. **Phases 4-14**: Applications and advanced features
+### API Only (headers complete, implementations pending):
+- 📝 `core/physics/` - Structures defined, solver logic pending
+- 📝 `track/` - APIs defined, basic structures only
+
+### Next Steps:
+See `AI_CONTEXT.md` > Next Priorities for implementation order.
 
 ---
 
 ## 🎯 Key Design Principles
 
-Following Guiggiani and `CODING_STANDARDS.md`:
+Following Guiggiani and coding standards from `AI_CONTEXT.md`:
 
 1. **Precision abstraction:** `vde_real` for all floating-point
 2. **Math library:** Use `vde_vec3`, `vde_quat`, `vde_frame`
@@ -256,10 +263,8 @@ Following Guiggiani and `CODING_STANDARDS.md`:
 - Ch 10: Advanced tires
 
 **Project Files:**
-- `AI_CONTEXT.md` - Quick reference for AI assistants
-- `CODING_STANDARDS.md` - Coding conventions
-- `copilotPlan.md` - Implementation roadmap
-- `README.md` - Project overview
+- `AI_CONTEXT.md` - Architecture, standards, and implementation status
+- `README.md` - Project overview and build guide
 
 ---
 
@@ -271,7 +276,7 @@ When adding new headers:
 3. Show formulas from the book
 4. Integrate with three-equation structure
 5. Update relevant README files
-6. Follow `CODING_STANDARDS.md`
+6. Follow coding standards from `AI_CONTEXT.md`
 
 ---
 

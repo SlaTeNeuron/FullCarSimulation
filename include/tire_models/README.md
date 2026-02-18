@@ -50,7 +50,7 @@ y(x) = D * sin[C * arctan{B*x - E*(B*x - arctan(B*x))}]
 - Realistic vehicle simulation
 - When experimental tire data available
 - Performance analysis
-- **Recommended for initial implementation** (copilotPlan.md Phase 2)
+- **Default model for the simulation**
 
 ---
 
@@ -177,25 +177,17 @@ Tire models are **CONSTITUTIVE** equations in Guiggiani's three-equation structu
 
 ## Implementation Roadmap
 
-Following `copilotPlan.md` Phase 2:
+### Status: ✅ All tire model source files complete
 
-### Step 1: Magic Formula (START HERE)
-1. Implement pure longitudinal slip: Fx(σ)
-2. Implement pure lateral slip: Fy(α)
-3. Combined slip (simplified)
-4. Test against known data
+Magic Formula and utilities are fully implemented. The brush model uses a
+simplified linear+saturation approximation with a clear upgrade path to the
+full physical implementation (see `src/tire_models/brush_models.c`).
 
-### Step 2: Tire Utilities
-1. Slip ratio calculation
-2. Slip angle calculation
-3. Force transformations
-
-### Step 3: Brush Model (LATER)
-1. Contact patch geometry
-2. Adhesion zone calculation
-3. Sliding zone calculation
-4. Force integration
-5. Transient behavior
+### Remaining: Full brush model bristle dynamics (Chapter 10)
+1. Contact patch geometry and bristle deflection
+2. Adhesion/sliding zone computation
+3. Force integration over contact patch
+4. Transient relaxation length behavior
 
 ---
 

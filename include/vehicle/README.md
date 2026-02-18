@@ -191,10 +191,9 @@ for (int i = 0; i < 4; i++) {
 ## Implementation Status
 
 ✅ **Headers complete** - All APIs defined with Guiggiani references  
-🚧 **Implementation in progress** - Following copilotPlan.md phases  
+🚧 **Implementations in progress** - See `AI_CONTEXT.md` > Summary Status for details  
 
-See `copilotPlan.md` for detailed implementation roadmap following
-Guiggiani's pedagogical order (Tires → Vehicle → Applications).
+Priority order: tires/tire utilities → three-equation scaffolding → full 3D Vehicle expansion.
 
 ---
 
