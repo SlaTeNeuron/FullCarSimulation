@@ -76,3 +76,83 @@ static inline bool vde_approx(vde_real a, vde_real b, vde_real tol) {
     if (ref < (vde_real)1.0) ref = (vde_real)1.0;
     return vde_abs(a - b) <= tol * ref;
 }
+// Min/Max functions
+static inline vde_real vde_min(vde_real a, vde_real b) {
+    return (a < b) ? a : b;
+}
+
+static inline vde_real vde_max(vde_real a, vde_real b) {
+    return (a > b) ? a : b;
+}
+
+// Sign function: returns -1, 0, or 1
+static inline vde_real vde_sign(vde_real x) {
+    return (x > (vde_real)0) ? (vde_real)1 : ((x < (vde_real)0) ? (vde_real)-1 : (vde_real)0);
+}
+
+// Square function (common in physics calculations)
+static inline vde_real vde_square(vde_real x) {
+    return x * x;
+}
+
+// Linear interpolation: lerp(a, b, t) = a + t*(b - a)
+static inline vde_real vde_lerp(vde_real a, vde_real b, vde_real t) {
+    return a + t * (b - a);
+}
+
+//-------------------------
+// Standard Math Function Wrappers
+// (for type safety and future GPU compatibility)
+//-------------------------
+
+static inline vde_real vde_sqrt(vde_real x) {
+    return (vde_real)sqrt(x);
+}
+
+static inline vde_real vde_sin(vde_real x) {
+    return (vde_real)sin(x);
+}
+
+static inline vde_real vde_cos(vde_real x) {
+    return (vde_real)cos(x);
+}
+
+static inline vde_real vde_tan(vde_real x) {
+    return (vde_real)tan(x);
+}
+
+static inline vde_real vde_atan2(vde_real y, vde_real x) {
+    return (vde_real)atan2(y, x);
+}
+
+static inline vde_real vde_asin(vde_real x) {
+    return (vde_real)asin(x);
+}
+
+static inline vde_real vde_acos(vde_real x) {
+    return (vde_real)acos(x);
+}
+
+static inline vde_real vde_atan(vde_real x) {
+    return (vde_real)atan(x);
+}
+
+static inline vde_real vde_pow(vde_real x, vde_real y) {
+    return (vde_real)pow(x, y);
+}
+
+static inline vde_real vde_exp(vde_real x) {
+    return (vde_real)exp(x);
+}
+
+static inline vde_real vde_log(vde_real x) {
+    return (vde_real)log(x);
+}
+
+static inline vde_real vde_floor(vde_real x) {
+    return (vde_real)floor(x);
+}
+
+static inline vde_real vde_ceil(vde_real x) {
+    return (vde_real)ceil(x);
+}

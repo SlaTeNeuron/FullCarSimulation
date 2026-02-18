@@ -116,16 +116,115 @@ void brush_tire_compute_forces(
 ) {
     if (!model || !state || !out_forces) return;
     
-    // TODO: Implement brush model force computation
-    // 1. Compute adhesion zone length
-    // 2. Integrate elastic deflections
-    // 3. Add sliding friction
-    // 4. Combine longitudinal and lateral
-    // 5. Compute aligning moment
+    const BrushTireParams* p = &model->params;
     
-    // Placeholder: zero forces
-    out_forces->force = vde_vec3_zero();
-    out_forces->moment = vde_vec3_zero();
-    out_forces->slip_ratio = state->slip_ratio;
-    out_forces->slip_angle = state->slip_angle;
+    vde_real Fz = state->normal_load;
+    vde_real sigma = state->slip_ratio;
+    vde_real alpha = state->slip_angle;
+    
+    // Maximum friction force
+    vde_real Fmax = p->friction_coeff * Fz;
+    
+    //-------------------------
+    // SIMPLIFIED BRUSH MODEL (Guiggiani Chapter 10)
+    //-------------------------
+    // The full brush model divides the contact patch into:
+    // 1. Adhesion zone (front): Bristles stick and deflect elastically
+    // 2. Sliding zone (rear): Bristles slide at friction limit
+    //
+    // The adhesion zone length 'a' is found by solving:
+    //   Elastic force in adhesion zone = Sliding force at transition
+    //
+    // For FULL IMPLEMENTATION (TODO for Phase 2+):
+    //   - Section 10.3: Compute adhesion zone length from slip and stiffness
+    //   - Section 10.4-10.5: Integrate bristle deflections
+    //   - Section 10.6: Handle combined slip with coupled equations
+    //   - Section 10.7: Include spin slip (camber effects)
+    //   - Section 10.8: Model transient bristle deflections (dynamic)
+    
+    // SIMPLIFIED VERSION: Use linear region + saturation
+    // This approximates the brush model behavior but without full integration
+    
+    //-------------------------
+    // Longitudinal Force
+    //-------------------------
+    // In small slip region: Fx ≈ Cx * σ (linear)
+    // At high slip: Fx → ±μ*Fz (friction limit)
+    vde_real Fx_linear = p->longitudinal_stiffness * sigma;
+    vde_real Fx = Fx_linear;
+    
+    // Saturate at friction limit
+    if (Fx > Fmax) Fx = Fmax;
+    if (Fx < -Fmax) Fx = -Fmax;
+    
+    //-------------------------
+    // Lateral Force
+    //-------------------------
+    // In small slip angle: Fy ≈ Cα * α (linear)
+    // At high slip angle: Fy → ±μ*Fz (friction limit)
+    vde_real Fy_linear = p->lateral_stiffness * alpha;
+    vde_real Fy = Fy_linear;
+    
+    // Saturate at friction limit
+    if (Fy > Fmax) Fy = Fmax;
+    if (Fy < -Fmax) Fy = -Fmax;
+    
+    //-------------------------
+    // Combined Slip (Friction Circle/Ellipse)
+    //-------------------------
+    // Total force limited by friction circle
+    vde_real F_total = sqrt(Fx * Fx + Fy * Fy);
+    if (F_total > Fmax) {
+        // Scale both forces to stay within friction limit
+        vde_real scale = Fmax / F_total;
+        Fx *= scale;
+        Fy *= scale;
+    }
+    
+    //-------------------------
+    // Vertical Force
+    //-------------------------
+    vde_real Fz_tire = Fz; // Reaction force equals normal load
+    
+    //-------------------------
+    // Aligning Moment (Self-Aligning Torque)
+    //-------------------------
+    // Caused by lateral force acting at center of pressure
+    // Center of pressure shifts rearward with increasing slip
+    // Full model: pneumatic trail = f(adhesion_zone_length)
+    // Simplified: Use constant pneumatic trail that decreases with slip
+    vde_real slip_angle_deg = vde_abs(alpha) * (vde_real)57.2958;
+    vde_real pneumatic_trail = (vde_real)0.03 * exp(-(vde_real)0.1 * slip_angle_deg);
+    vde_real Mz = -Fy * pneumatic_trail;
+    
+    //-------------------------
+    // Output Forces
+    //-------------------------
+    out_forces->force.x = Fx;
+    out_forces->force.y = Fy;
+    out_forces->force.z = -Fz_tire;
+    
+    out_forces->moment.x = (vde_real)0.0; // Overturning moment (simplified)
+    out_forces->moment.y = (vde_real)0.0; // Rolling resistance (simplified)
+    out_forces->moment.z = Mz;
+    
+    out_forces->slip_ratio = sigma;
+    out_forces->slip_angle = alpha;
+    
+    /* ALPHA STATUS: Using simplified linear+saturation model.
+     * This provides good behavior for alpha release.
+     * 
+     * POST-ALPHA TODO (Guiggiani Chapter 10):
+     * 1. Implement adhesion zone calculation (Section 10.3)
+     * 2. Add bristle deflection integration (Sections 10.4-10.7)
+     * 3. Implement coupled equations for combined slip (Section 10.6)
+     * 4. Add transient bristle state variables (Section 10.8):
+     *    - Bristle deflection history
+     *    - Relaxation length dynamics
+     *    - Memory effects in contact patch
+     * 
+     * For full transient model, brush model struct needs:
+     *    - vde_real bristle_state[N];  // Deflection state
+     *    - vde_real relaxation_state;  // Transient relaxation
+     */
 }

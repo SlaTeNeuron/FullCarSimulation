@@ -48,4 +48,11 @@ VDE_API void logger_log_v(Logger* logger, LogLevel level, const char* format, va
 #define LOG_INFO(logger, ...)  logger_log(logger, LOG_LEVEL_INFO, __VA_ARGS__)
 #define LOG_WARN(logger, ...)  logger_log(logger, LOG_LEVEL_WARNING, __VA_ARGS__)
 #define LOG_ERROR(logger, ...) logger_log(logger, LOG_LEVEL_ERROR, __VA_ARGS__)
+
+// Simple VDE_LOG_* macros for alpha (use printf, no logger instance needed)
+#include <stdio.h>
+#define VDE_LOG_DEBUG(...) printf("[DEBUG] " __VA_ARGS__); printf("\n")
+#define VDE_LOG_INFO(...)  printf("[INFO]  " __VA_ARGS__); printf("\n")
+#define VDE_LOG_WARN(...)  printf("[WARN]  " __VA_ARGS__); printf("\n")
+#define VDE_LOG_ERROR(...) printf("[ERROR] " __VA_ARGS__); printf("\n")
 #define LOG_FATAL(logger, ...) logger_log(logger, LOG_LEVEL_FATAL, __VA_ARGS__)

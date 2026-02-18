@@ -59,23 +59,8 @@ typedef struct VehicleForces {
 // (Guiggiani Section 3.7)
 //-------------------------
 
-// Load transfer components
-typedef struct LoadTransfers {
-    //--- Longitudinal Load Transfer (Section 3.7.1) ---
-    vde_real longitudinal;       // ΔFz due to braking/acceleration (N)
-    
-    //--- Lateral Load Transfers (Section 3.7.2) ---
-    vde_real lateral_front;      // Front axle lateral load transfer (N)
-    vde_real lateral_rear;       // Rear axle lateral load transfer (N)
-    
-    //--- Vertical Loads (Section 3.7.3) ---
-    vde_real vertical_loads[4];  // Total vertical load on each tire (N)
-    // Indexes: 0=FL, 1=FR, 2=RL, 3=RR
-    
-    //--- Load Transfer Distribution ---
-    vde_real front_roll_stiffness_fraction;  // Front roll stiffness ratio
-    vde_real rear_roll_stiffness_fraction;   // Rear roll stiffness ratio
-} LoadTransfers;
+// Forward declaration - full definition in vehicle_model.h
+typedef struct LoadTransfers LoadTransfers;
 
 //-------------------------
 // Equations of Motion

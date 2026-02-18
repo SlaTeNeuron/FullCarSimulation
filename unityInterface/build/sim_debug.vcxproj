@@ -372,13 +372,44 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\math\vec3.c" />
-    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\math\mat3.c" />
-    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\math\quat.c" />
-    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\math\frames.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\core\math\vec3.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\core\math\mat3.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\core\math\quat.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\core\math\frames.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\core\math\math_base.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\core\integrator\integrator_base.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\core\integrator\runge_kutta4.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\core\integrator\semi_implicit_euler.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\core\physics\equations_of_motion.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\core\physics\dynamics_solver.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\core\physics\constraints.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\core\utils\logger.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\tire_models\tire_utilities.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\tire_models\magic_formula.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\tire_models\brush_models.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\tire.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\wheel.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\suspension.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\brakes.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\aerodynamics.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\steering.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\driveline.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\sprung_mass.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\unsprung_mass.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\vehicle_parameters.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\vehicle_congruence.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\vehicle_constitutive.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\vehicle_equilibrium.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\vehicle_model.c" />
     <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\vehicle\vehicle.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\track\track_geometry.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\track\track_surface.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\track\friction_map.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\track\track.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\input\control.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\simulation\simulation_loop.c" />
+    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\simulation\telemetry.c" />
     <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\simulation\sim.c" />
-    <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\src\api.c" />
     <ClCompile Include="C:\Users\jacob\TBRE\Driving Sim\FullCarSim\unityInterface\src\debug_main.c" />
   </ItemGroup>
   <ItemGroup />

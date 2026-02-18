@@ -168,4 +168,4 @@ void track_geometry_get_tangent(
     
     // Placeholder: forward direction
     *out_tangent = vde_vec3_make(1, 0, 0);
-} functions
+}

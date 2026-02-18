@@ -1,4 +1,6 @@
 #include "vehicle/tire.h"
+#include "tire_models/magic_formula.h"
+#include "tire_models/brush_models.h"
 #include <stdlib.h>
 
 //-------------------------
@@ -29,8 +31,15 @@ Tire* tire_create(void) {
     if (!tire) return NULL;
     
     tire->radius = (vde_real)0.32; // 0.32m typical (640mm diameter)
-    tire->tire_model = NULL;
-    tire->model_type = 0; // Default to Magic Formula
+    
+    // Use Brush Model (0 for Magic Formula, 1 for Brush)
+    tire->model_type = 1;
+    tire->tire_model = brush_tire_create();
+    
+    if (!tire->tire_model) {
+        free(tire);
+        return NULL;
+    }
     
     return tire;
 }
@@ -44,11 +53,14 @@ Tire* tire_create(void) {
 void tire_destroy(Tire* tire) {
     if (!tire) return;
     
-    // TODO: Destroy tire model if allocated
-    // if (tire->tire_model) {
-    //     if (tire->model_type == 0) magic_formula_destroy(tire->tire_model);
-    //     else brush_tire_destroy(tire->tire_model);
-    // }
+    // Destroy tire model based on type
+    if (tire->tire_model) {
+        if (tire->model_type == 0) {
+            magic_formula_destroy((MagicFormulaTireModel*)tire->tire_model);
+        } else {
+            brush_tire_destroy((BrushTireModel*)tire->tire_model);
+        }
+    }
     
     free(tire);
 }
@@ -111,16 +123,19 @@ vde_real tire_get_radius(const Tire* tire) {
 void tire_compute_forces(Tire* tire, const TireState* state, TireForces* out_forces) {
     if (!tire || !state || !out_forces) return;
     
-    // TODO: Implement tire force computation
-    // if (tire->model_type == 0) {
-    //     magic_formula_compute_forces(tire->tire_model, state, out_forces);
-    // } else {
-    //     brush_tire_compute_forces(tire->tire_model, state, out_forces);
-    // }
+    if (!tire->tire_model) {
+        // No model: zero forces
+        out_forces->force = vde_vec3_zero();
+        out_forces->moment = vde_vec3_zero();
+        out_forces->slip_ratio = state->slip_ratio;
+        out_forces->slip_angle = state->slip_angle;
+        return;
+    }
     
-    // Placeholder: zero forces
-    out_forces->force = vde_vec3_zero();
-    out_forces->moment = vde_vec3_zero();
-    out_forces->slip_ratio = state->slip_ratio;
-    out_forces->slip_angle = state->slip_angle;
+    // Call appropriate tire model
+    if (tire->model_type == 0) {
+        magic_formula_compute_forces((MagicFormulaTireModel*)tire->tire_model, state, out_forces);
+    } else {
+        brush_tire_compute_forces((BrushTireModel*)tire->tire_model, state, out_forces);
+    }
 }

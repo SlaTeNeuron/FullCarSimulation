@@ -203,4 +203,4 @@ void unsprung_mass_apply_force(UnsprungMass* um, const vde_vec3* force) {
 void unsprung_mass_get_accumulated_force(const UnsprungMass* um, vde_vec3* out_force) {
     if (!um || !out_force) return;
     *out_force = um->force_accum;
-} component
+}

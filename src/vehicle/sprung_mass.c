@@ -245,4 +245,4 @@ void sprung_mass_get_accumulated_forces(const SprungMass* sm, vde_vec3* out_forc
     if (!sm) return;
     if (out_force) *out_force = sm->force_accum;
     if (out_moment) *out_moment = sm->moment_accum;
-} component
+}

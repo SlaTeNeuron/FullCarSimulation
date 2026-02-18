@@ -181,4 +181,4 @@ vde_real driveline_compute_wheel_torque(const Driveline* driveline, int wheel_in
     
     // Split evenly among driven wheels (open differential)
     return total_torque / (vde_real)num_driven;
-} (engine, transmission, differentials)
+}
