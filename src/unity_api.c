@@ -9,7 +9,6 @@
 #include "unity_api.h"
 #include "vehicle/vehicle_model.h"
 #include "vehicle/vehicle.h"
-#include "simulation/simulation_loop.h"
 #include "core/utils/logger.h"
 #include "core/math/vec3.h"
 #include "core/math/quat.h"

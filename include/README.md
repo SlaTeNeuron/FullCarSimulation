@@ -39,11 +39,6 @@ include/
 │   ├── track_geometry.h    Track geometry
 │   └── friction_map.h      Friction mapping
 │
-├── simulation/             Simulation control
-│   ├── simulation_config.h Main simulation API
-│   ├── simulation_loop.h   Simulation loop
-│   └── telemetry.h         Data recording
-│
 └── input/                  Control inputs
     └── control.h           Driver input system
 ```
@@ -218,7 +213,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 - ✅ `tire_models/brush_models` - Simplified brush model
 - ✅ `tire_models/tire_utilities` - Slip calculations
 - ✅ `vehicle/tire.c` - Tire component with model dispatch
-- ✅ `simulation/simulation_config.h` - Basic simulation API
 
 ### Scaffolded (structure + placeholder logic):
 - 🚧 `vehicle/vehicle_congruence.c` - Ackermann works; others return zeros

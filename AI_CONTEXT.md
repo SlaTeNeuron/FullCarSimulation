@@ -2,8 +2,8 @@
 
 **🤖 FOR AI ASSISTANTS: Read this FIRST before making any code changes**
 
-**Last Updated:** February 18, 2026  
-**Codebase Status:** Unity API fully implemented and wired up. Complete working simulation with simple 2D dynamics. All header files defined with complete API interfaces and comprehensive Guiggiani references. Integrator implementations complete. Three-equation structure source files scaffolded (Ackermann and load transfer work; tire force paths return zeros pending full 3D Vehicle expansion). Tire models fully implemented.
+**Last Updated:** February 19, 2026  
+**Codebase Status:** Unity API fully implemented and wired up. Complete working simulation with simple 2D dynamics. All header files defined with complete API interfaces and comprehensive Guiggiani references. Integrator implementations complete. Three-equation structure source files scaffolded (Ackermann and load transfer work; tire force paths return zeros pending full 3D Vehicle expansion). Tire models fully implemented. `src/simulation/` removed (dead code) — debug harness now drives entirely through `unity_api.c` for code-path parity with the DLL.
 
 ---
 
@@ -76,15 +76,29 @@ int VehicleSim_LoadVehicle(VehicleSimulation* sim, const char* config_path)
 void VehicleSim_GetVehicleParameters(const VehicleSimulation* sim, VehicleParameters* out)
 ```
 
-**Internal C API (for debugging):**
+**Debug harness (`unityInterface/src/debug_main.c`):**
+
+> The old internal `Sim*` API (`sim_create`, `sim_step`, `sim_get_state`, …) and its
+> source files (`src/simulation/sim.c`, `simulation_loop.c`, `telemetry.c`) have been
+> **removed** (February 2026). `debug_main.c` now calls `VehicleSim_*` directly —
+> `unity_api.c` is compiled statically into the exe. Every code path exercised by
+> the debug harness is the exact same code that ships in `racing_sim.dll`.
+
 ```c
-// Defined in: simulation/simulation_config.h, implemented in: simulation/sim.c
-// Used by: unityInterface/src/debug_main.c (standalone test executable)
-Sim* sim_create(vde_real timestep)
-void sim_step(Sim* s)
-void sim_set_inputs(Sim* s, vde_real throttle, vde_real brake, vde_real steer)
-void sim_get_state(Sim* s, SimState* out)
-void sim_destroy(Sim* s)
+// debug_main.c startup (mirrors Unity Start())
+VehicleSimulation* sim = VehicleSim_Create(0.001);
+VehicleSim_SetLogCallback(sim, my_log_cb, NULL);
+VehicleSim_LoadVehicle(sim, "data/vehicles/TBReCar.txt");
+VehicleSim_LoadTrack(sim, "data/tracks/skidpad.txt");
+VehicleSim_Initialize(sim);
+
+// debug_main.c step loop (mirrors Unity FixedUpdate())
+DriverInputs inputs = { .throttle=1.0, .gear=1 };
+VehicleSim_Step(sim, &inputs);
+
+// debug_main.c output (mirrors Unity Update())
+TelemetryFrame frame;  VehicleSim_GetTelemetry(sim, &frame);
+VehicleRenderData rd;  VehicleSim_GetRenderData(sim, &rd);
 ```
 
 ### Layer 2: Internal Physics (Guiggiani Implementation)
@@ -202,7 +216,6 @@ FullCarSim/
 │   ├── core/            # Math, integrators, physics, utils
 │   ├── vehicle/         # Three-equation structure + components
 │   ├── tire_models/     # Magic Formula, Brush
-│   ├── simulation/      # Sim loop
 │   ├── track/           # Track geometry
 │   └── input/           # Controls
 │
@@ -417,19 +430,15 @@ Headers make Guiggiani's methodology explicit; source files exist with correct s
 4. Retrieve VehicleRenderData for Unity visualization
 5. Retrieve TelemetryFrame for data logging
 
-### Simulation System (`simulation/`) - ✅ WORKING
+### Simulation System - 🗑️ FULLY REMOVED (February 2026)
 
-- `simulation_config.h` - Main simulation API ✅ IMPLEMENTED
-- `simulation_loop.h` - Simulation loop structure (API defined)
-- `telemetry.h` - Telemetry system (API defined)
+The entire `simulation/` subtree has been deleted:
+- `src/simulation/sim.c`, `simulation_loop.c`, `telemetry.c` — dead code, no callers
+- `include/simulation/simulation_config.h`, `simulation_loop.h`, `telemetry.h` — orphaned headers
 
-**Current capabilities:**
-- Configurable timestep
-- Telemetry callbacks
-- State export
-- Input validation
-
-**Implementation status:** Basic loop working, fully integrated with Unity API
+**Reason:** `unity_api.c` is a complete, self-contained simulation loop.
+A separate internal `Sim*` API created two divergent code paths with no active users.
+The debug harness (`debug_main.c`) now calls `VehicleSim_*` directly.
 
 ---
 
@@ -476,6 +485,8 @@ Each provides:
 ### Summary Status
 
 - ✅ **unity_api.c** - FULLY IMPLEMENTED - Complete working DLL with all functions
+- ✅ **debug_main.c** - REWORKED - Drives entirely through VehicleSim_* (unity_api.c path)
+- 🗑️ **simulation/** - FULLY REMOVED - src/ and include/ both deleted (dead code)
 - ✅ **vehicle.c** - WORKING 2D SIMULATION - Simple dynamics fully functional
 - ✅ **State retrieval** - vehicle_model_get_state() converts 2D→3D properly
 - ✅ **Render data** - All output structures populated with real simulation data
@@ -504,6 +515,19 @@ Each provides:
 - ✅ Three-equation structure source files created
 - ✅ Vehicle component implementations with USER_DECISION points
 - ✅ Complete tire force computation pipeline
+
+**Major Progress (February 19, 2026):**
+- 🗑️ Deleted `src/simulation/` — sim.c, simulation_loop.c, telemetry.c (dead code, no callers)
+- 🗑️ Deleted `include/simulation/` — simulation_config.h, simulation_loop.h, telemetry.h (orphaned headers)
+- ✅ Rewrote `debug_main.c` to drive entirely through `VehicleSim_*` Unity API
+- ✅ `unity_api.c` now compiles statically into `sim_debug.exe` — identical code path to DLL
+- ✅ Debug harness now exercises: `SetLogCallback`, `TelemetryCallback`, `GetRenderData`,
+  `VehicleSim_Validate`, `VehicleSim_GetStats`, `VehicleSim_GetDiagnostics`, `Reset`
+- ✅ Removed stale `#include "simulation/simulation_loop.h"` from `unity_api.c`
+- ✅ Updated `CMakeLists.txt`: removed dead sources, added `unity_api.c` to `DEBUG_SRC`,
+  replaced `STATIC_BUILD` define with `BUILDING_DLL` for consistent `UNITY_API` expansion
+- ✅ Default debug timestep changed from 0.02 s (50 Hz) to 0.001 s (1 kHz) to match DLL rate
+- ✅ Updated `DEBUG_README.md` and `unityInterface/QUICK_REFERENCE.md`
 
 **Current State:**
 The DLL can now run a complete driving simulation! Simple 2D dynamics are fully functional with:
@@ -737,7 +761,7 @@ void set_speed(Vehicle* v, vde_real speed) {
 10. **Build instructions:** See `README.md`
 11. **Math API reference:** Look at `include/core/math/*.h` headers
 12. **Component APIs:** All headers in `include/` have complete function APIs
-13. **Working examples:** Check `src/vehicle/vehicle.c`, `src/simulation/sim.c`
+13. **Working examples:** Check `src/vehicle/vehicle.c`, `src/unity_api.c`, `unityInterface/src/debug_main.c`
 14. **Guiggiani references:** Every header has chapter/section annotations
 
 ---

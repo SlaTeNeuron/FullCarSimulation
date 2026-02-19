@@ -25,23 +25,33 @@ sim_debug.exe -test 1
 sim_debug.exe -interactive
 sim_debug.exe -i
 
-# Custom timestep (default 0.02)
+# Custom timestep (default 0.001 = 1 kHz, matches DLL rate)
+sim_debug.exe -dt 0.001
 sim_debug.exe -dt 0.01
 
+# Custom asset paths
+sim_debug.exe -vehicle ../../data/vehicles/TBReCar.txt
+sim_debug.exe -track   ../../data/tracks/skidpad.txt
+
 # Combine options
-sim_debug.exe -dt 0.01 -test 3
+sim_debug.exe -dt 0.001 -test 3
+sim_debug.exe -i -dt 0.001
 ```
 
 ## Interactive Commands
 
 | Command | Description | Example |
 |---------|-------------|---------|
-| `step N` | Run N simulation steps | `step 100` |
-| `input T B S` | Set throttle, brake, steer (-1 to 1) | `input 1.0 0.0 0.5` |
-| `start` | Start simulation | `start` |
-| `stop` | Stop simulation | `stop` |
-| `state` | Print current state | `state` |
-| `telem` | Get telemetry data | `telem` |
+| `step [N]` | Run N steps (default 1) | `step 100` |
+| `input T B S [G]` | Set throttle brake steer [gear] | `input 1.0 0.0 0.5 1` |
+| `reset` | Reset + re-initialize | `reset` |
+| `state` | Telemetry state snapshot | `state` |
+| `render` | `VehicleRenderData` (Unity frame output) | `render` |
+| `telem` | Full `TelemetryFrame` dump | `telem` |
+| `params` | Vehicle parameters | `params` |
+| `validate` | Run validation check | `validate` |
+| `stats` | Step count, timing, real-time factor | `stats` |
+| `diag` | Full diagnostics to stderr | `diag` |
 | `quit` | Exit | `quit` |
 
 ## Input Ranges
@@ -50,7 +60,8 @@ sim_debug.exe -dt 0.01 -test 3
 |-------|-------|-------------|
 | Throttle | 0.0 to 1.0 | 0 = no throttle, 1 = full throttle |
 | Brake | 0.0 to 1.0 | 0 = no brake, 1 = full brake |
-| Steer | -1.0 to 1.0 | -1 = full left, 0 = center, 1 = full right |
+| Steer | -1.0 to 1.0 | -1 = full left, 0 = centre, 1 = full right |
+| Gear | -1, 0, 1–6 | -1 = reverse, 0 = neutral, 1–6 = forward |
 
 ## Example Workflow
 
@@ -63,40 +74,58 @@ build_debug.bat
 run_debug.bat -i
 
 # 3. In interactive mode:
-> start
-> input 1.0 0.0 0.0     # Full throttle
-> step 100              # Run 100 steps
-> state                 # Check state
-> input 0.5 0.0 0.8     # Half throttle, right turn
-> step 200              # Run more steps
-> state                 # Check state again
+> input 1.0 0.0 0.0 1     # Full throttle, gear 1
+> step 100                # Run 100 steps
+> state                   # Check state
+> input 0.5 0.0 0.8 1     # Half throttle, right turn
+> step 200                # Run more steps
+> render                  # Check render data (Unity frame)
+> validate                # Confirm sim is healthy
+> stats                   # Review step timing
 > quit
 ```
 
 ## Output Redirect
 
 ```bash
-# Save output to file
+# Save stdout to file (stderr log still visible in console)
 sim_debug.exe > results.txt
 
 # Save and view simultaneously (PowerShell)
 .\sim_debug.exe | Tee-Object -FilePath results.txt
+
+# Suppress log noise, keep test output
+.\sim_debug.exe 2>$null > results.txt
 ```
 
-## Files Created
+## Files
 
-- `sim_debug.exe` - Debug executable (in `build/Debug/`)
-- `racing_sim.dll` - Unity DLL (in `build/`)
+- `build/Debug/sim_debug.exe` — debug executable (statically links `unity_api.c`)
+- `build/racing_sim.dll` — Unity DLL (same `unity_api.c` compiled as shared library)
+
+> Both targets compile `unity_api.c` with `BUILDING_DLL` defined — identical code path.
+> The `simulation/` subtree (src and include) was fully removed (February 2026).
 
 ## Common Use Cases
 
 ### Test a specific maneuver
 ```bash
 sim_debug.exe -i
-> start
-> input 0.7 0.0 0.5
+> input 0.7 0.0 0.5 1
 > step 500
 > state
+> render
+```
+
+### Quick regression check (all tests, 1 kHz)
+```bash
+sim_debug.exe -dt 0.001 > results.txt
+```
+
+### Investigate an initialization failure
+```bash
+sim_debug.exe -i
+> diag
 ```
 
 ### Performance profiling
@@ -108,12 +137,11 @@ sim_debug.exe -test 1
 
 ### Verify physics changes
 ```bash
-# 1. Modify vehicle.c or sim.c
-# 2. Rebuild
+# 1. Modify vehicle.c or other physics source
 build_debug.bat
-# 3. Run test
+# 2. Run test
 sim_debug.exe -test 3
-# 4. Compare with expected behavior
+# 3. Compare with expected behavior
 ```
 
 ### Record telemetry

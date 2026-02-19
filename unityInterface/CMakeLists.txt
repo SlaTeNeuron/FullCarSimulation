@@ -69,11 +69,6 @@ set(CORE_SRC
     
     # Input handling
     ${SIM_ROOT}/src/input/control.c
-    
-    # Simulation loop and telemetry
-    ${SIM_ROOT}/src/simulation/simulation_loop.c
-    ${SIM_ROOT}/src/simulation/telemetry.c
-    ${SIM_ROOT}/src/simulation/sim.c
 )
 
 # Unity DLL-specific source (API layer)
@@ -81,8 +76,9 @@ set(DLL_SRC
     ${SIM_ROOT}/src/unity_api.c
 )
 
-# Debug executable source
+# Debug executable source (includes the Unity API layer compiled statically)
 set(DEBUG_SRC
+    ${SIM_ROOT}/src/unity_api.c
     ${CMAKE_SOURCE_DIR}/src/debug_main.c
 )
 
@@ -111,8 +107,10 @@ set_target_properties(racing_sim PROPERTIES
 # ========================================
 add_executable(sim_debug ${CORE_SRC} ${DEBUG_SRC})
 
-# Debug exe statically links simulation code - use STATIC_BUILD
-target_compile_definitions(sim_debug PRIVATE STATIC_BUILD _CRT_SECURE_NO_WARNINGS)
+# Debug exe compiles unity_api.c statically.
+# BUILDING_DLL makes UNITY_API expand to dllexport (same as the DLL build);
+# __declspec(dllexport) on an executable symbol is harmless — it is simply ignored.
+target_compile_definitions(sim_debug PRIVATE BUILDING_DLL _CRT_SECURE_NO_WARNINGS)
 if (WIN32)
     target_compile_definitions(sim_debug PRIVATE -DWIN32)
 endif()
