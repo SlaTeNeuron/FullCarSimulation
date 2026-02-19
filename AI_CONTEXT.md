@@ -3,7 +3,7 @@
 **🤖 FOR AI ASSISTANTS: Read this FIRST before making any code changes**
 
 **Last Updated:** February 19, 2026  
-**Codebase Status:** Unity API fully implemented and wired up. Complete working simulation with simple 2D dynamics. All header files defined with complete API interfaces and comprehensive Guiggiani references. Integrator implementations complete. Three-equation structure source files scaffolded (Ackermann and load transfer work; tire force paths return zeros pending full 3D Vehicle expansion). Tire models fully implemented. `src/simulation/` removed (dead code) — debug harness now drives entirely through `unity_api.c` for code-path parity with the DLL.
+**Codebase Status:** Unity API fully implemented and wired up. Complete working simulation with simple 2D dynamics. All header files defined with complete API interfaces and comprehensive Guiggiani references. Integrator implementations complete. Three-equation structure source files scaffolded (Ackermann and load transfer work; tire force paths return zeros pending full 3D Vehicle expansion). Tire models fully implemented. `src/simulation/` removed (dead code) — debug harness now drives entirely through `unity_api.c` for code-path parity with the DLL. **Vehicle parameter system fully consolidated** — single `static const VehicleParameters s_tbre_defaults` in `vehicle_parameters.c` is the sole source of truth for all TBRe FSAE defaults; `vehicle_params_load_from_file()` overrides at runtime; `vehicle_params_apply_to_*()` functions propagate to components at init with zero runtime overhead.
 
 ---
 

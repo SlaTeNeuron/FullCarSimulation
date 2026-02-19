@@ -51,5 +51,13 @@ VDE_API void aerodynamics_set_drag_coeff(Aerodynamics* aero, vde_real cd);
 VDE_API void aerodynamics_set_lift_coeff(Aerodynamics* aero, vde_real cl);
 VDE_API void aerodynamics_set_frontal_area(Aerodynamics* aero, vde_real area);
 
+// Air density, kg/m³ (default 1.225 at sea level / 15 °C)
+VDE_API void aerodynamics_set_air_density(Aerodynamics* aero, vde_real rho);
+VDE_API vde_real aerodynamics_get_air_density(const Aerodynamics* aero);
+
+// Fraction of total downforce acting on the front axle [0, 1]
+VDE_API void aerodynamics_set_aero_balance(Aerodynamics* aero, vde_real balance);
+VDE_API vde_real aerodynamics_get_aero_balance(const Aerodynamics* aero);
+
 // Compute aerodynamic forces
 VDE_API void aerodynamics_compute_forces(const Aerodynamics* aero, const Vehicle* vehicle, AeroForces* out_forces);

@@ -45,5 +45,18 @@ VDE_API vde_real steering_get_angle(const Steering* steering);
 VDE_API void steering_set_ratio(Steering* steering, vde_real ratio);
 VDE_API vde_real steering_get_ratio(const Steering* steering);
 
-// Compute wheel steer angle for a corner (applies Ackermann geometry)
+// Maximum road-wheel steer angle (mechanical lock-to-lock half), radians
+VDE_API void steering_set_max_angle(Steering* steering, vde_real max_rad);
+VDE_API vde_real steering_get_max_angle(const Steering* steering);
+
+// Ackermann factor: 0 = parallel steer, 1 = full Ackermann geometry
+// Guiggiani Sec. 3.2.3
+VDE_API void steering_set_ackermann_factor(Steering* steering, vde_real factor);
+VDE_API vde_real steering_get_ackermann_factor(const Steering* steering);
+
+// Chassis geometry needed for Ackermann calculation
+VDE_API void steering_set_wheelbase(Steering* steering, vde_real wheelbase);
+VDE_API void steering_set_track_width(Steering* steering, vde_real track_width);
+
+// Compute road-wheel steer angle for a corner (applies ratio + Ackermann)
 VDE_API vde_real steering_compute_wheel_angle(const Steering* steering, int corner_index);

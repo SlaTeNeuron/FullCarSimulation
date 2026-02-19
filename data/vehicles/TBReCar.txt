@@ -1,0 +1,195 @@
+# =============================================================================
+# TBRe FSAE Car — Vehicle Parameter File
+# Vehicle Dynamics Engine (VDE)
+#
+# Format: INI-style  (# and ; begin comments, inline comments supported)
+#   [section]
+#   key = value
+#
+# Sections: meta, mass, geometry, suspension, wheel, aero,
+#           brakes, steering, driveline, tire_model
+#
+# Units: SI throughout — kg, m, N, N·m, rad, kg·m², N/m, N·s/m
+# Angles in radians unless noted in the comment.
+#
+# This file contains the same values baked into the compile-time defaults
+# (s_tbre_defaults in vehicle_parameters.c).  Editing this file overrides
+# those defaults at runtime without recompiling.
+#
+# Guiggiani axis convention (vehicle body frame):
+#   X = forward, Y = left, Z = up
+#   cg_to_front_axle = a,  cg_to_rear_axle = c
+#   Static front-axle load fraction = c / wheelbase
+# =============================================================================
+
+[meta]
+name    = TBRe FSAE Car
+version = 1.0
+
+# =============================================================================
+# Mass & Inertia  (Guiggiani Sec. 3.10, Ch. 9)
+# Total: 230 kg chassis + 50 kg driver = 280 kg
+# Weight distribution: 45 % front / 55 % rear
+# =============================================================================
+
+[mass]
+total_mass         = 280.0      # kg — vehicle + driver
+sprung_mass        = 230.0      # kg — chassis portion (on springs)
+unsprung_mass_fl   = 12.5       # kg — front-left  corner
+unsprung_mass_fr   = 12.5       # kg — front-right corner
+unsprung_mass_rl   = 12.5       # kg — rear-left   corner
+unsprung_mass_rr   = 12.5       # kg — rear-right  corner
+inertia_roll       = 25.0       # Ixx  kg·m²  (roll about longitudinal axis)
+inertia_pitch      = 75.0       # Iyy  kg·m²  (pitch about lateral axis)
+inertia_yaw        = 90.0       # Izz  kg·m²  (yaw about vertical axis)
+cg_height          = 0.265      # m    — centre of gravity above ground
+
+# =============================================================================
+# Chassis Geometry  (Guiggiani Sec. 3.2)
+# Static weight: N_front = m·g·(cg_to_rear_axle / wheelbase)
+#   → N_front/W = 0.689/1.530 ≈ 45 %
+# =============================================================================
+
+[geometry]
+wheelbase          = 1.530      # m — front-to-rear axle centre distance
+track_front        = 1.220      # m — front axle tyre centre-to-centre
+track_rear         = 1.170      # m — rear  axle tyre centre-to-centre
+cg_to_front_axle   = 0.841      # m — (a) CG to front axle  (→ 55 % rear load)
+cg_to_rear_axle    = 0.689      # m — (c) CG to rear  axle  (→ 45 % front load)
+
+# =============================================================================
+# Suspension  (Guiggiani Sec. 3.8, Ch. 8)
+# Stiff FSAE setup; front springs slightly stiffer for handling balance.
+# Corners: FL = front-left, FR = front-right, RL = rear-left, RR = rear-right
+# =============================================================================
+
+[suspension]
+spring_rate_fl     = 35000.0    # N/m — spring stiffness
+spring_rate_fr     = 35000.0
+spring_rate_rl     = 30000.0
+spring_rate_rr     = 30000.0
+damper_coeff_fl    = 2000.0     # N·s/m — linear damping
+damper_coeff_fr    = 2000.0
+damper_coeff_rl    = 1800.0
+damper_coeff_rr    = 1800.0
+rest_length_fl     = 0.200      # m — spring natural (unloaded) length
+rest_length_fr     = 0.200
+rest_length_rl     = 0.200
+rest_length_rr     = 0.200
+roll_stiffness_front = 800.0    # N·m/rad — front anti-roll bar contribution
+roll_stiffness_rear  = 400.0    # N·m/rad — rear  anti-roll bar contribution
+
+# =============================================================================
+# Wheel & Tyre Geometry  (Guiggiani Sec. 2.7, 2.11)
+# Hoosier 20.5×7.0-13 FSAE slick:
+#   Overall diameter = 20.5 in = 0.521 m → effective radius = 0.260 m
+#   Section width    = 7.0  in = 0.178 m
+# =============================================================================
+
+[wheel]
+radius             = 0.260      # m    — effective rolling radius
+width              = 0.178      # m    — tyre section width
+inertia            = 0.9        # kg·m² — rotational inertia per wheel assembly
+rolling_resistance = 0.012      # Crr  — rolling resistance coefficient
+
+# =============================================================================
+# Aerodynamics  (Guiggiani Sec. 7.6)
+# Full aero package: front wing + floor/diffuser + rear wing
+# At 30 m/s (≈ 108 km/h):
+#   Downforce = 0.5 × 1.225 × 0.92 × 2.10 × 30² ≈ 1060 N
+#             = ~38 % of vehicle weight (significant at FSAE speeds)
+# =============================================================================
+
+[aero]
+drag_coeff         = 1.35       # Cd  — dimensionless drag coefficient
+lift_coeff         = -2.10      # Cl  — negative = downforce
+frontal_area       = 0.92       # m²  — reference frontal area
+aero_balance       = 0.40       # —   — front downforce fraction (40 % front)
+air_density        = 1.225      # kg/m³ — sea level / 15 °C
+
+# =============================================================================
+# Brakes  (Guiggiani Ch. 4)
+# Large hydraulic calipers; front-biased for load-transfer benefit.
+# Optimal balance (Sec. 4.6): φ = c/L + μ·h/L
+#   ≈ 0.45 + 1.8 × 0.265/1.530 ≈ 0.76 → 65 % front is conservative/safe
+# =============================================================================
+
+[brakes]
+max_torque_front   = 1200.0     # N·m — maximum per front wheel
+max_torque_rear    = 800.0      # N·m — maximum per rear  wheel
+brake_balance      = 0.65       # —   — front fraction [0, 1]
+
+# =============================================================================
+# Steering  (Guiggiani Sec. 3.2.3)
+# Direct rack-and-pinion; partial Ackermann for FSAE cornering.
+# =============================================================================
+
+[steering]
+ratio              = 3.5        # —   — steering-wheel turns / road-wheel turns
+max_angle          = 0.349      # rad — max road-wheel steer angle (≈ 20 °)
+ackermann_factor   = 0.75       # —   — 0 = parallel, 1 = full Ackermann
+
+# =============================================================================
+# Driveline  (Guiggiani Sec. 3.11.4, 6.1, 7.1)
+# Yamaha R6 600 cc engine, 19 mm intake restrictor, sequential 5-speed,
+# chain final drive.  drive_config: 0=FWD, 1=RWD, 2=AWD
+# =============================================================================
+
+[driveline]
+drive_config           = 1         # 1 = RWD
+engine_max_torque      = 72.0      # N·m — peak at crankshaft (~11 000 rpm)
+gear_ratio_1           = 2.615
+gear_ratio_2           = 1.812
+gear_ratio_3           = 1.409
+gear_ratio_4           = 1.130
+gear_ratio_5           = 0.935
+gear_ratio_6           = 0.0       # 6th gear not used on TBRe
+gear_ratio_r           = -3.0      # reverse
+final_drive_ratio      = 3.77      # chain sprocket ratio
+drivetrain_efficiency  = 0.91      # ~9 % chain + bearing losses
+
+# =============================================================================
+# Tyre Model — Pacejka Magic Formula  (Guiggiani Sec. 2.10)
+# Hoosier LC0 20.5×7.0-13 FSAE slick, representative coefficients.
+#
+# Formula: y(x) = D·sin[C·arctan{B·x − E·(B·x − arctan(B·x))}]
+#
+# Longitudinal (b-series):
+#   Cx = b0 (shape)
+#   Dx = Fz·(b1·Fz + b2)        → b2 ≈ peak μx  (target: 1.80)
+#   Kx = Fz·(b3·Fz + b4)·exp(−b5·Fz)  → peak slip ≈ 10 %
+#   Ex = b6·Fz² + b7·Fz + b8
+#
+# Lateral (a-series):
+#   Cy = a0 (shape)
+#   Dy = Fz·(a1·Fz + a2)        → a2 ≈ peak μy  (target: 1.90)
+#   Ky = Fz·a3·sin(a4·atan(Fz/a5))  → CS ≈ 14 000 N/rad at 700 N
+#   Ey = a6·Fz + a7
+# =============================================================================
+
+[tire_model]
+# --- Longitudinal coefficients ---
+b0  = 1.65      # Cx: shape factor
+b1  = 0.0       # Dx load variation  (0 = constant friction)
+b2  = 1.80      # Dx base            (≈ peak μx = 1.80)
+b3  = 0.0       # Kx quadratic load
+b4  = 28.0      # Kx linear load     → peak slip σ ≈ 10 %
+b5  = 0.0       # Kx load decay
+b6  = 0.0       # Ex quadratic load
+b7  = 0.0       # Ex linear load
+b8  = -0.50     # Ex base            (slight curvature / post-peak shape)
+b9  = 0.0       # horizontal shift, linear Fz
+b10 = 0.0       # vertical shift
+
+# --- Lateral coefficients ---
+a0  = 1.30      # Cy: shape factor
+a1  = 0.0       # Dy load variation  (0 = constant friction)
+a2  = 1.90      # Dy base            (≈ peak μy = 1.90)
+a3  = 22.0      # Ky cornering stiffness factor
+a4  = 1.50      # Ky load curve shape
+a5  = 700.0     # Ky reference load (N) — peak CS at typical FSAE corner load
+a6  = 0.0       # Ey linear load
+a7  = -0.60     # Ey base            (curvature / post-peak)
+a8  = 0.0       # camber thrust coefficient
+
+vertical_stiffness = 150000.0   # N/m — tyre carcass vertical stiffness

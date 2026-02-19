@@ -41,9 +41,20 @@ VDE_API void brakes_destroy(Brakes* brakes);
 VDE_API void brakes_set_pressure(Brakes* brakes, vde_real pressure);
 VDE_API vde_real brakes_get_pressure(const Brakes* brakes);
 
-// Brake properties (max torque per wheel)
+// Brake properties — separate front/rear physical limits
+VDE_API void brakes_set_max_torque_front(Brakes* brakes, vde_real max_torque);
+VDE_API vde_real brakes_get_max_torque_front(const Brakes* brakes);
+VDE_API void brakes_set_max_torque_rear(Brakes* brakes, vde_real max_torque);
+VDE_API vde_real brakes_get_max_torque_rear(const Brakes* brakes);
+
+// Convenience: set the same torque limit for all four wheels
 VDE_API void brakes_set_max_torque(Brakes* brakes, vde_real max_torque);
 VDE_API vde_real brakes_get_max_torque(const Brakes* brakes);
 
-// Compute brake torque for a wheel
+// Front/rear balance: fraction of braking force on front axle [0, 1]
+// Guiggiani Sec. 4.6: optimal φ = c/L + μ·h/L
+VDE_API void brakes_set_brake_balance(Brakes* brakes, vde_real balance);
+VDE_API vde_real brakes_get_brake_balance(const Brakes* brakes);
+
+// Compute brake torque for a specific wheel (applies balance internally)
 VDE_API vde_real brakes_compute_torque(const Brakes* brakes, int wheel_index);

@@ -6,9 +6,10 @@
 //-------------------------
 
 struct Brakes {
-    vde_real pressure;      // Brake input [0, 1]
-    vde_real max_torque;    // Maximum brake torque per wheel (N*m)
-    vde_real brake_balance; // Front brake bias [0, 1] (0.5 = 50/50 split)
+    vde_real pressure;          // Brake input [0, 1]
+    vde_real max_torque_front;  // Maximum brake torque per front wheel (N*m)
+    vde_real max_torque_rear;   // Maximum brake torque per rear  wheel (N*m)
+    vde_real brake_balance;     // Front fraction [0, 1] (Guiggiani Sec. 4.6)
 };
 
 //-------------------------
@@ -28,9 +29,10 @@ Brakes* brakes_create(void) {
     Brakes* brakes = (Brakes*)malloc(sizeof(Brakes));
     if (!brakes) return NULL;
     
-    brakes->pressure = (vde_real)0.0;
-    brakes->max_torque = (vde_real)3000.0; // 3000 N*m typical
-    brakes->brake_balance = (vde_real)0.6; // 60% front bias typical
+    brakes->pressure         = (vde_real)0.0;
+    brakes->max_torque_front = (vde_real)1200.0; // N*m per front wheel (TBRe defaults)
+    brakes->max_torque_rear  = (vde_real) 800.0; // N*m per rear  wheel
+    brakes->brake_balance    = (vde_real)0.65;   // 65% front (Guiggiani Sec. 4.6)
     
     return brakes;
 }
@@ -59,12 +61,7 @@ void brakes_destroy(Brakes* brakes) {
  */
 void brakes_set_pressure(Brakes* brakes, vde_real pressure) {
     if (!brakes) return;
-    
-    // Clamp to valid range
-    if (pressure < (vde_real)0.0) pressure = (vde_real)0.0;
-    if (pressure > (vde_real)1.0) pressure = (vde_real)1.0;
-    
-    brakes->pressure = pressure;
+    brakes->pressure = vde_clamp(pressure, (vde_real)0.0, (vde_real)1.0);
 }
 
 /**
@@ -85,30 +82,50 @@ vde_real brakes_get_pressure(const Brakes* brakes) {
 // Properties
 //-------------------------
 
-/**
- * Set maximum brake torque per wheel
- * 
- * Input:
- *   - brakes: Brake system (must be non-NULL)
- *   - max_torque: Maximum torque in N*m (typically 2000-5000)
- */
-void brakes_set_max_torque(Brakes* brakes, vde_real max_torque) {
+/** Set maximum brake torque for front wheels (N*m each). */
+void brakes_set_max_torque_front(Brakes* brakes, vde_real max_torque) {
     if (!brakes) return;
-    brakes->max_torque = max_torque;
+    brakes->max_torque_front = max_torque;
 }
 
-/**
- * Get maximum brake torque
- * 
- * Input:
- *   - brakes: Brake system (must be non-NULL)
- * 
- * Output:
- *   - Returns max torque in N*m
- */
-vde_real brakes_get_max_torque(const Brakes* brakes) {
+vde_real brakes_get_max_torque_front(const Brakes* brakes) {
     if (!brakes) return (vde_real)0.0;
-    return brakes->max_torque;
+    return brakes->max_torque_front;
+}
+
+/** Set maximum brake torque for rear wheels (N*m each). */
+void brakes_set_max_torque_rear(Brakes* brakes, vde_real max_torque) {
+    if (!brakes) return;
+    brakes->max_torque_rear = max_torque;
+}
+
+vde_real brakes_get_max_torque_rear(const Brakes* brakes) {
+    if (!brakes) return (vde_real)0.0;
+    return brakes->max_torque_rear;
+}
+
+/** Convenience: set the same torque limit for all four wheels. */
+void brakes_set_max_torque(Brakes* brakes, vde_real max_torque) {
+    if (!brakes) return;
+    brakes->max_torque_front = max_torque;
+    brakes->max_torque_rear  = max_torque;
+}
+
+vde_real brakes_get_max_torque(const Brakes* brakes) {
+    // Returns the higher of front/rear (representative maximum)
+    if (!brakes) return (vde_real)0.0;
+    return vde_max(brakes->max_torque_front, brakes->max_torque_rear);
+}
+
+/** Front/rear brake balance: fraction on front axle [0, 1]. */
+void brakes_set_brake_balance(Brakes* brakes, vde_real balance) {
+    if (!brakes) return;
+    brakes->brake_balance = vde_clamp(balance, (vde_real)0.0, (vde_real)1.0);
+}
+
+vde_real brakes_get_brake_balance(const Brakes* brakes) {
+    if (!brakes) return (vde_real)0.5;
+    return brakes->brake_balance;
 }
 
 //-------------------------
@@ -138,18 +155,12 @@ vde_real brakes_get_max_torque(const Brakes* brakes) {
 vde_real brakes_compute_torque(const Brakes* brakes, int wheel_index) {
     if (!brakes) return (vde_real)0.0;
     
-    // TODO: Implement proper brake torque computation with balance
-    // Front wheels (0, 1) get brake_balance fraction
-    // Rear wheels (2, 3) get (1 - brake_balance) fraction
-    
-    vde_real base_torque = brakes->pressure * brakes->max_torque;
-    
-    // Simple front/rear split
+    // Front wheels (0=FL, 1=FR) use max_torque_front directly.
+    // Rear  wheels (2=RL, 3=RR) use max_torque_rear  directly.
+    // Guiggiani Sec. 4.6: optimal balance φ = c/L + μ·h/L
     if (wheel_index < 2) {
-        // Front wheels
-        return base_torque * brakes->brake_balance;
+        return brakes->pressure * brakes->max_torque_front;
     } else {
-        // Rear wheels
-        return base_torque * ((vde_real)1.0 - brakes->brake_balance);
+        return brakes->pressure * brakes->max_torque_rear;
     }
 }

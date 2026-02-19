@@ -7,10 +7,11 @@
 //-------------------------
 
 struct Aerodynamics {
-    vde_real drag_coeff;      // Drag coefficient Cd
-    vde_real lift_coeff;      // Lift coefficient Cl (negative for downforce)
-    vde_real frontal_area;    // Frontal area (m²)
-    vde_real air_density;     // Air density (kg/m³, typically ~1.225)
+    vde_real drag_coeff;    // Cd
+    vde_real lift_coeff;    // Cl (negative for downforce)
+    vde_real frontal_area;  // m²
+    vde_real air_density;   // kg/m³
+    vde_real aero_balance;  // front downforce fraction [0, 1]
 };
 
 //-------------------------
@@ -31,11 +32,11 @@ Aerodynamics* aerodynamics_create(void) {
     Aerodynamics* aero = (Aerodynamics*)malloc(sizeof(Aerodynamics));
     if (!aero) return NULL;
     
-    // Default values for typical road car
-    aero->drag_coeff = (vde_real)0.3;
-    aero->lift_coeff = (vde_real)0.0;  // Zero downforce by default
-    aero->frontal_area = (vde_real)2.0; // ~2 m²
-    aero->air_density = (vde_real)1.225; // Sea level
+    aero->drag_coeff    = (vde_real)1.35;   // TBRe full-aero setup
+    aero->lift_coeff    = (vde_real)-2.10;  // strong downforce
+    aero->frontal_area  = (vde_real)0.92;   // m²
+    aero->air_density   = (vde_real)1.225;  // sea level, 15 °C
+    aero->aero_balance  = (vde_real)0.40;   // 40 % front downforce
     
     return aero;
 }
@@ -89,6 +90,28 @@ void aerodynamics_set_lift_coeff(Aerodynamics* aero, vde_real cl) {
 void aerodynamics_set_frontal_area(Aerodynamics* aero, vde_real area) {
     if (!aero) return;
     aero->frontal_area = area;
+}
+
+/** Set air density (kg/m³). Standard sea-level value: 1.225. */
+void aerodynamics_set_air_density(Aerodynamics* aero, vde_real rho) {
+    if (!aero) return;
+    aero->air_density = rho;
+}
+
+vde_real aerodynamics_get_air_density(const Aerodynamics* aero) {
+    if (!aero) return (vde_real)1.225;
+    return aero->air_density;
+}
+
+/** Set fraction of total downforce acting on the front axle [0, 1]. */
+void aerodynamics_set_aero_balance(Aerodynamics* aero, vde_real balance) {
+    if (!aero) return;
+    aero->aero_balance = vde_clamp(balance, (vde_real)0.0, (vde_real)1.0);
+}
+
+vde_real aerodynamics_get_aero_balance(const Aerodynamics* aero) {
+    if (!aero) return (vde_real)0.5;
+    return aero->aero_balance;
 }
 
 //-------------------------

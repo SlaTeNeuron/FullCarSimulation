@@ -43,8 +43,18 @@ VDE_API vde_real driveline_get_throttle(const Driveline* driveline);
 
 // Driveline properties
 VDE_API void driveline_set_engine_torque(Driveline* driveline, vde_real torque);
-VDE_API void driveline_set_gear_ratio(Driveline* driveline, vde_real ratio);
+VDE_API void driveline_set_gear_ratio(Driveline* driveline, vde_real ratio);   // sets current single ratio
+VDE_API void driveline_set_gear_ratios(Driveline* driveline, const vde_real* ratios, int count); // full array [0]=1st…[5]=6th, [6]=rev
 VDE_API void driveline_set_final_drive(Driveline* driveline, vde_real ratio);
 
-// Compute wheel torque for a driven wheel
+// Drive configuration: 0=FWD, 1=RWD, 2=AWD
+// Updates the driven-wheels mask internally.
+VDE_API void driveline_set_drive_config(Driveline* driveline, int config);
+VDE_API int  driveline_get_drive_config(const Driveline* driveline);
+
+// Transmission efficiency [0, 1] — applied to total wheel torque
+VDE_API void driveline_set_drivetrain_efficiency(Driveline* driveline, vde_real efficiency);
+VDE_API vde_real driveline_get_drivetrain_efficiency(const Driveline* driveline);
+
+// Compute drive torque for a specific wheel
 VDE_API vde_real driveline_compute_wheel_torque(const Driveline* driveline, int wheel_index);
